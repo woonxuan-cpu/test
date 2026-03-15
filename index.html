@@ -140,6 +140,11 @@
         gap: 24px;
       }
 
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
       .panel {
         background: var(--card);
         border: 1px solid var(--stroke);
@@ -352,6 +357,95 @@
         gap: 12px;
       }
 
+      .chart-controls {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .chart-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .period-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .period-buttons button {
+        border: 1px solid rgba(27, 154, 170, 0.2);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--muted);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .period-buttons button.active,
+      .period-buttons button:hover {
+        background: var(--accent-2);
+        color: #fff;
+        border-color: var(--accent-2);
+      }
+
+      .chart-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .chart-stat {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 14px;
+        padding: 10px 12px;
+        border: 1px solid rgba(26, 26, 26, 0.08);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chart-stat strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 14px;
+        color: var(--ink);
+      }
+
+      .chart-stat strong.up {
+        color: var(--success);
+      }
+
+      .chart-stat strong.down {
+        color: var(--danger);
+      }
+
+      .chart-canvas {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(26, 26, 26, 0.08);
+        border-radius: 16px;
+        padding: 12px;
+        min-height: 240px;
+      }
+
+      .chart-canvas svg {
+        width: 100%;
+        height: 240px;
+        display: block;
+      }
+
+      .chart-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .rate-card {
         background: rgba(255, 255, 255, 0.92);
         border-radius: 16px;
@@ -472,7 +566,8 @@
         }
 
         .row,
-        .row.three {
+        .row.three,
+        .chart-row {
           grid-template-columns: 1fr;
         }
       }
@@ -558,16 +653,46 @@
           </div>
         </section>
 
-        <section class="panel" aria-label="汇率看板">
-          <h2>实时汇率看板</h2>
-          <div class="cards" id="rateCards"></div>
-          <div class="empty" id="emptyState">当前没有追踪的币种，请先添加。</div>
-        </section>
+        <div class="stack">
+          <section class="panel" aria-label="汇率看板">
+            <h2>实时汇率看板</h2>
+            <div class="cards" id="rateCards"></div>
+            <div class="empty" id="emptyState">当前没有追踪的币种，请先添加。</div>
+          </section>
+
+          <section class="panel" aria-label="历史走势图">
+            <h2>历史走势图</h2>
+            <div class="chart-controls">
+              <div class="chart-row">
+                <div>
+                  <label for="chartTarget">图表币种</label>
+                  <select id="chartTarget"></select>
+                </div>
+                <div>
+                  <label>&nbsp;</label>
+                  <button class="btn secondary" id="refreshHistory" type="button">更新历史</button>
+                </div>
+              </div>
+              <div class="period-buttons" id="chartPeriods">
+                <button type="button" data-days="7">7 天</button>
+                <button type="button" data-days="30" class="active">30 天</button>
+                <button type="button" data-days="90">90 天</button>
+                <button type="button" data-days="180">180 天</button>
+              </div>
+              <div class="hint" id="chartHint">历史数据来自 Frankfurter (ECB)，仅支持部分币种。</div>
+            </div>
+            <div class="chart-stats" id="chartMetrics"></div>
+            <div class="chart-canvas" id="chartCanvas"></div>
+            <div class="chart-meta" id="chartMeta"></div>
+            <div class="empty" id="chartEmpty">暂无历史数据可显示。</div>
+          </section>
+        </div>
       </main>
 
       <footer>
-        汇率数据来自 ExchangeRate-API（Open Access）。公开接口更新频率为每日一次，请合理设置刷新频率。
+        实时汇率来自 ExchangeRate-API（Open Access），历史走势来自 Frankfurter（ECB）。
         <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">Rates By Exchange Rate API</a>
+        <a href="https://frankfurter.dev" target="_blank" rel="noreferrer">Frankfurter API</a>
       </footer>
     </div>
 
@@ -575,9 +700,11 @@
 
     <script>
       const API_BASE = "https://open.er-api.com/v6/latest/";
+      const HISTORY_API_BASE = "https://api.frankfurter.dev/v1/";
+      const HISTORY_CACHE_TTL = 6 * 60 * 60 * 1000;
       const STORAGE_KEY = "fx_tracker_state_v1";
 
-      const currencyNames = {
+      const localCurrencyNames = {
         USD: "美元",
         EUR: "欧元",
         CNY: "人民币",
@@ -615,7 +742,12 @@
         lastData: null,
         previousRates: null,
         lastFetchedAt: null,
-        timer: null
+        timer: null,
+        historyTarget: "",
+        historyRangeDays: 30,
+        historySupported: [],
+        historyNames: {},
+        historyCache: {}
       };
 
       const elements = {
@@ -639,11 +771,23 @@
         supportHint: document.getElementById("supportHint"),
         networkState: document.getElementById("networkState"),
         currencyList: document.getElementById("currencyList"),
-        quickBase: document.getElementById("quickBase")
+        quickBase: document.getElementById("quickBase"),
+        chartTarget: document.getElementById("chartTarget"),
+        chartPeriods: document.getElementById("chartPeriods"),
+        chartMetrics: document.getElementById("chartMetrics"),
+        chartCanvas: document.getElementById("chartCanvas"),
+        chartMeta: document.getElementById("chartMeta"),
+        chartEmpty: document.getElementById("chartEmpty"),
+        chartHint: document.getElementById("chartHint"),
+        refreshHistory: document.getElementById("refreshHistory")
       };
 
       function normalizeCode(value) {
         return value.trim().toUpperCase();
+      }
+
+      function getCurrencyName(code) {
+        return localCurrencyNames[code] || state.historyNames[code] || "";
       }
 
       function formatRate(value) {
@@ -676,7 +820,9 @@
           amount: state.amount,
           targets: state.targets,
           autoRefresh: state.autoRefresh,
-          refreshMinutes: state.refreshMinutes
+          refreshMinutes: state.refreshMinutes,
+          historyTarget: state.historyTarget,
+          historyRangeDays: state.historyRangeDays
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       }
@@ -694,6 +840,14 @@
           if (typeof parsed.autoRefresh === "boolean") state.autoRefresh = parsed.autoRefresh;
           if (Number.isFinite(parsed.refreshMinutes)) {
             state.refreshMinutes = Math.min(360, Math.max(60, parsed.refreshMinutes));
+          }
+          if (parsed.historyTarget) {
+            state.historyTarget = normalizeCode(parsed.historyTarget);
+          }
+          if (Number.isFinite(parsed.historyRangeDays)) {
+            const allowedRanges = [7, 30, 90, 180];
+            const rangeValue = Math.min(365, Math.max(7, parsed.historyRangeDays));
+            state.historyRangeDays = allowedRanges.includes(rangeValue) ? rangeValue : 30;
           }
         } catch (error) {
           console.warn("Failed to parse saved state", error);
@@ -719,7 +873,7 @@
         }
         elements.targetChips.innerHTML = state.targets
           .map((code) => {
-            const name = currencyNames[code] || "";
+            const name = getCurrencyName(code);
             return `
               <div class="chip" data-code="${code}">
                 ${code} <span>${name}</span>
@@ -734,12 +888,229 @@
         const sorted = [...codes].sort();
         elements.currencyList.innerHTML = sorted
           .map((code) => {
-            const name = currencyNames[code] || "";
+            const name = getCurrencyName(code);
             const label = name ? `${code} - ${name}` : code;
             return `<option value="${code}" label="${label}"></option>`;
           })
           .join("");
         elements.supportHint.textContent = `已加载 ${sorted.length} 个币种。支持 ISO 4217 代码。`;
+      }
+
+      function formatISODateUTC(date) {
+        const d = new Date(date);
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(d.getUTCDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function shiftDaysUTC(days) {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() - days);
+        return d;
+      }
+
+      function updateChartPeriods() {
+        const buttons = elements.chartPeriods.querySelectorAll("button[data-days]");
+        buttons.forEach((btn) => {
+          btn.classList.toggle("active", parseInt(btn.dataset.days, 10) === state.historyRangeDays);
+        });
+      }
+
+      function updateChartTargets() {
+        const candidates = state.targets.filter((code) => code !== state.base);
+        if (!candidates.length) {
+          elements.chartTarget.innerHTML = "";
+          showChartEmpty("请先添加追踪币种。");
+          return;
+        }
+        if (!candidates.includes(state.historyTarget)) {
+          state.historyTarget = candidates[0];
+          saveState();
+        }
+        elements.chartTarget.innerHTML = candidates
+          .map((code) => {
+            const name = getCurrencyName(code);
+            return `<option value="${code}">${code}${name ? ` · ${name}` : ""}</option>`;
+          })
+          .join("");
+        elements.chartTarget.value = state.historyTarget;
+      }
+
+      function showChartEmpty(message) {
+        elements.chartEmpty.textContent = message;
+        elements.chartEmpty.style.display = "block";
+        elements.chartCanvas.innerHTML = "";
+        elements.chartMetrics.innerHTML = "";
+        elements.chartMeta.textContent = "";
+      }
+
+      function renderHistory(points, meta) {
+        if (!points.length) {
+          showChartEmpty("暂无历史数据可显示。");
+          return;
+        }
+        elements.chartEmpty.style.display = "none";
+
+        const values = points.map((point) => point.value);
+        const minValue = Math.min(...values);
+        const maxValue = Math.max(...values);
+        const first = points[0].value;
+        const last = points[points.length - 1].value;
+        const change = ((last - first) / first) * 100;
+        const changeClass = change > 0 ? "up" : change < 0 ? "down" : "";
+        const changeLabel = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
+
+        elements.chartMetrics.innerHTML = `
+          <div class="chart-stat">
+            <span>区间涨跌</span>
+            <strong class="${changeClass}">${changeLabel}</strong>
+          </div>
+          <div class="chart-stat">
+            <span>区间最低</span>
+            <strong>${formatRate(minValue)}</strong>
+          </div>
+          <div class="chart-stat">
+            <span>区间最高</span>
+            <strong>${formatRate(maxValue)}</strong>
+          </div>
+        `;
+
+        const width = 640;
+        const height = 240;
+        const padding = { top: 24, right: 24, bottom: 32, left: 48 };
+        const innerWidth = width - padding.left - padding.right;
+        const innerHeight = height - padding.top - padding.bottom;
+        const range = maxValue - minValue || 1;
+        const pointGap = points.length > 1 ? innerWidth / (points.length - 1) : innerWidth;
+
+        const coords = points.map((point, index) => {
+          const x = padding.left + index * pointGap;
+          const y = padding.top + (1 - (point.value - minValue) / range) * innerHeight;
+          return { x, y };
+        });
+
+        const linePath = coords
+          .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+          .join(" ");
+
+        const areaPath = `${linePath} L ${padding.left + innerWidth},${padding.top + innerHeight} L ${padding.left},${padding.top + innerHeight} Z`;
+        const gradientId = `chartGradient-${state.historyTarget}`;
+
+        const gridLines = [0, 0.5, 1]
+          .map((ratio) => {
+            const y = padding.top + ratio * innerHeight;
+            return `<line x1="${padding.left}" y1="${y}" x2="${padding.left + innerWidth}" y2="${y}" stroke="rgba(26,26,26,0.08)" stroke-dasharray="4 6" />`;
+          })
+          .join("");
+
+        const lastPoint = coords[coords.length - 1];
+
+        elements.chartCanvas.innerHTML = `
+          <svg viewBox="0 0 ${width} ${height}" aria-label="历史汇率曲线">
+            <defs>
+              <linearGradient id="${gradientId}" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="rgba(27,154,170,0.35)" />
+                <stop offset="100%" stop-color="rgba(27,154,170,0.02)" />
+              </linearGradient>
+            </defs>
+            ${gridLines}
+            <path d="${areaPath}" fill="url(#${gradientId})" stroke="none"></path>
+            <path d="${linePath}" fill="none" stroke="var(--accent-2)" stroke-width="2.6" stroke-linecap="round"></path>
+            <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="4.5" fill="var(--accent)" stroke="#fff" stroke-width="2"></circle>
+            <text x="${padding.left}" y="${padding.top - 6}" font-size="10" fill="var(--muted)">${formatRate(maxValue)}</text>
+            <text x="${padding.left}" y="${padding.top + innerHeight + 14}" font-size="10" fill="var(--muted)">${formatRate(minValue)}</text>
+          </svg>
+        `;
+
+        elements.chartMeta.innerHTML = `
+          <span>起始 ${meta.start}</span>
+          <span>结束 ${meta.end}</span>
+        `;
+      }
+
+      async function loadHistoryCurrencies() {
+        if (state.historySupported.length) return;
+        try {
+          const response = await fetch(`${HISTORY_API_BASE}currencies`);
+          const payload = await response.json();
+          state.historyNames = payload || {};
+          state.historySupported = Object.keys(payload || {});
+          if (state.supportedCodes.length) {
+            updateCurrencyList(state.supportedCodes);
+          }
+        } catch (error) {
+          console.warn("Failed to load history currencies", error);
+        }
+      }
+
+      async function fetchHistory(force = false) {
+        await loadHistoryCurrencies();
+
+        if (!state.historyTarget) {
+          showChartEmpty("请选择图表币种。");
+          return;
+        }
+
+        const base = state.base;
+        const target = state.historyTarget;
+
+        if (state.historySupported.length) {
+          const baseSupported = state.historySupported.includes(base);
+          const targetSupported = state.historySupported.includes(target);
+          if (!baseSupported || !targetSupported) {
+            showChartEmpty("历史数据源暂不支持该币种组合。");
+            elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB)，仅支持部分币种。";
+            return;
+          }
+        }
+
+        const key = `${base}_${target}_${state.historyRangeDays}`;
+        const cached = state.historyCache[key];
+        if (!force && cached && Date.now() - cached.fetchedAt < HISTORY_CACHE_TTL) {
+          renderHistory(cached.points, cached.meta);
+          elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB) · 工作日更新";
+          return;
+        }
+
+        try {
+          elements.chartHint.textContent = "正在加载历史数据…";
+          const endDate = formatISODateUTC(new Date());
+          const startDate = formatISODateUTC(shiftDaysUTC(state.historyRangeDays));
+          const url = `${HISTORY_API_BASE}${startDate}..${endDate}?base=${base}&symbols=${target}`;
+          const response = await fetch(url);
+          const payload = await response.json();
+
+          const points = Object.keys(payload.rates || {})
+            .sort()
+            .map((date) => ({
+              date,
+              value: payload.rates[date]?.[target]
+            }))
+            .filter((point) => Number.isFinite(point.value));
+
+          if (!points.length) {
+            showChartEmpty("暂无历史数据可显示。");
+            return;
+          }
+
+          const meta = {
+            start: payload.start_date || startDate,
+            end: payload.end_date || endDate
+          };
+
+          state.historyCache[key] = {
+            points,
+            meta,
+            fetchedAt: Date.now()
+          };
+
+          renderHistory(points, meta);
+          elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB) · 工作日更新";
+        } catch (error) {
+          console.error(error);
+          showChartEmpty("历史数据加载失败，请稍后重试。");
+        }
       }
 
       function renderRates() {
@@ -764,7 +1135,7 @@
             const deltaLabel = delta === null ? "—" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}%`;
             const deltaClass = delta === null ? "" : delta > 0 ? "up" : delta < 0 ? "down" : "";
             const flash = delta !== null && Math.abs(delta) >= 0.05 ? "flash" : "";
-            const name = currencyNames[code] || "";
+            const name = getCurrencyName(code);
             return `
               <article class="rate-card ${flash}" style="--delay: ${index * 0.04}s">
                 <div class="rate-header">
@@ -822,7 +1193,7 @@
         }
       }
 
-      async function fetchRates() {
+      async function fetchRates(forceHistory = false) {
         const base = normalizeCode(state.base || "USD");
         state.base = base;
         elements.baseInput.value = base;
@@ -841,13 +1212,15 @@
           state.lastData = payload;
           state.lastFetchedAt = Date.now();
           state.supportedCodes = Object.keys(payload.rates || {}).concat(base);
-          state.targets = state.targets.filter((code) => code !== base);
+          state.targets = state.targets.filter((code) => code !== base && payload.rates?.[code]);
 
           saveCache(base, payload);
           updateCurrencyList(state.supportedCodes);
           updateMeta(payload, state.lastFetchedAt);
           renderChips();
           renderRates();
+          updateChartTargets();
+          fetchHistory(forceHistory);
 
           setStatus("已更新汇率，数据正常。", "ok");
         } catch (error) {
@@ -857,11 +1230,13 @@
             state.lastData = cached.data;
             state.lastFetchedAt = cached.fetchedAt;
             state.supportedCodes = Object.keys(cached.data.rates || {}).concat(base);
-            state.targets = state.targets.filter((code) => code !== base);
+            state.targets = state.targets.filter((code) => code !== base && cached.data.rates?.[code]);
             updateCurrencyList(state.supportedCodes);
             updateMeta(cached.data, cached.fetchedAt);
             renderChips();
             renderRates();
+            updateChartTargets();
+            fetchHistory(forceHistory);
             setStatus("网络异常，已使用缓存数据。", "error");
           } else {
             setStatus("获取失败，请稍后重试。", "error");
@@ -877,6 +1252,7 @@
         elements.refreshRange.value = state.refreshMinutes;
         elements.refreshValue.textContent = `${state.refreshMinutes} 分钟/次`;
         updateQuickBase();
+        updateChartPeriods();
       }
 
       function maybeRefreshOnFocus() {
@@ -894,7 +1270,7 @@
           setStatus("请输入 3 位币种代码。", "error");
           return;
         }
-        if (!state.supportedCodes.includes(code)) {
+        if (state.supportedCodes.length && !state.supportedCodes.includes(code)) {
           setStatus("该币种暂不支持或尚未加载。", "error");
           return;
         }
@@ -903,6 +1279,8 @@
           saveState();
           renderChips();
           renderRates();
+          updateChartTargets();
+          fetchHistory(true);
         }
         elements.addCodeInput.value = "";
       }
@@ -923,6 +1301,8 @@
         saveState();
         renderChips();
         renderRates();
+        updateChartTargets();
+        fetchHistory(true);
       });
 
       elements.baseInput.addEventListener("change", () => {
@@ -958,7 +1338,28 @@
       });
 
       elements.refreshNow.addEventListener("click", () => {
-        fetchRates();
+        fetchRates(true);
+      });
+
+      elements.refreshHistory.addEventListener("click", () => {
+        fetchHistory(true);
+      });
+
+      elements.chartTarget.addEventListener("change", () => {
+        const code = normalizeCode(elements.chartTarget.value);
+        state.historyTarget = code;
+        saveState();
+        fetchHistory(true);
+      });
+
+      elements.chartPeriods.addEventListener("click", (event) => {
+        const btn = event.target.closest("button[data-days]");
+        if (!btn) return;
+        const days = parseInt(btn.dataset.days, 10);
+        state.historyRangeDays = days;
+        updateChartPeriods();
+        saveState();
+        fetchHistory(true);
       });
 
       elements.quickBase.addEventListener("click", (event) => {
