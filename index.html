@@ -366,12 +366,35 @@
         margin-bottom: 12px;
       }
 
+      .field-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
       .field-label span {
         color: var(--muted);
         font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
+      }
+
+      .picker-button {
+        border: 1px solid rgba(45, 109, 246, 0.14);
+        background: rgba(45, 109, 246, 0.06);
+        color: var(--blue);
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        transition: all 0.2s ease;
+      }
+
+      .picker-button:hover {
+        background: rgba(45, 109, 246, 0.12);
+        transform: translateY(-1px);
       }
 
       .field-grid {
@@ -885,6 +908,128 @@
         text-decoration: none;
       }
 
+      .picker-modal[hidden] {
+        display: none;
+      }
+
+      .picker-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(6, 16, 45, 0.52);
+        backdrop-filter: blur(10px);
+      }
+
+      .picker-dialog {
+        width: min(100%, 560px);
+        max-height: min(80vh, 720px);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        border-radius: 28px;
+        border: 1px solid rgba(17, 32, 63, 0.08);
+        background: #fff;
+        box-shadow: 0 26px 60px rgba(8, 21, 58, 0.28);
+      }
+
+      .picker-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 18px 10px;
+      }
+
+      .picker-head h3 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .picker-close {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 12px;
+        background: var(--surface-alt);
+        color: var(--navy);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .picker-search-wrap {
+        padding: 0 18px 14px;
+      }
+
+      .picker-search {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: var(--surface-alt);
+        border-radius: 18px;
+        padding: 15px 16px;
+        font-size: 15px;
+        outline: none;
+      }
+
+      .picker-search:focus {
+        border-color: rgba(45, 109, 246, 0.42);
+        box-shadow: 0 0 0 4px rgba(45, 109, 246, 0.12);
+      }
+
+      .picker-list {
+        overflow: auto;
+        padding: 0 12px 12px;
+      }
+
+      .picker-option {
+        width: 100%;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 12px;
+        border-radius: 18px;
+        text-align: left;
+        transition: background 0.2s ease;
+      }
+
+      .picker-option:hover {
+        background: var(--surface-alt);
+      }
+
+      .picker-option strong {
+        display: block;
+        font-family: "Manrope", "Noto Sans SC", sans-serif;
+        font-size: 16px;
+      }
+
+      .picker-option span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .picker-option code {
+        padding: 6px 8px;
+        border-radius: 999px;
+        color: var(--blue);
+        background: var(--blue-soft);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .picker-empty {
+        padding: 18px 12px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
       @media (max-width: 980px) {
         .hero,
         .converter-grid,
@@ -943,6 +1088,13 @@
 
         .amount-input {
           font-size: 32px;
+        }
+
+        .picker-dialog {
+          width: 100%;
+          max-height: calc(100dvh - 20px);
+          height: min(calc(100dvh - 20px), 760px);
+          border-radius: 24px;
         }
       }
     </style>
@@ -1018,6 +1170,9 @@
               <div class="field-card">
                 <div class="field-label">
                   <span>From</span>
+                  <div class="field-actions">
+                    <button class="picker-button" id="basePickerButton" type="button">搜索货币</button>
+                  </div>
                 </div>
                 <div class="field-grid">
                   <input id="amountInput" class="amount-input" type="number" min="0" step="0.01" value="1" />
@@ -1032,6 +1187,9 @@
               <div class="field-card">
                 <div class="field-label">
                   <span>To</span>
+                  <div class="field-actions">
+                    <button class="picker-button" id="targetPickerButton" type="button">搜索货币</button>
+                  </div>
                 </div>
                 <div class="field-grid">
                   <input id="resultDisplay" class="amount-input" type="text" value="--" readonly />
@@ -1118,6 +1276,7 @@
             <label for="watchSelect">添加币种</label>
             <select id="watchSelect" class="watch-select"></select>
             <button class="primary-button" id="watchAddButton" type="button">加入列表</button>
+            <button class="picker-button" id="watchPickerButton" type="button">搜索货币</button>
           </div>
 
           <div class="chip-row" id="watchChips"></div>
@@ -1137,6 +1296,7 @@
             <label for="chartTargetSelect">图表币种</label>
             <select id="chartTargetSelect" class="chart-select"></select>
             <button class="secondary-button" id="historyRefreshButton" type="button">刷新历史数据</button>
+            <button class="picker-button" id="chartPickerButton" type="button">搜索货币</button>
           </div>
 
           <div class="range-toggle" id="rangeToggle">
@@ -1188,6 +1348,25 @@
       </div>
     </div>
 
+    <div class="picker-modal" id="pickerModal" hidden>
+      <div class="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+        <div class="picker-head">
+          <h3 id="pickerTitle">搜索货币</h3>
+          <button class="picker-close" id="pickerCloseButton" type="button" aria-label="关闭">×</button>
+        </div>
+        <div class="picker-search-wrap">
+          <input
+            id="pickerSearchInput"
+            class="picker-search"
+            type="text"
+            placeholder="搜索币种代码、中文名或英文名，例如 USD / 人民币 / yen"
+            autocomplete="off"
+          />
+        </div>
+        <div class="picker-list" id="pickerList"></div>
+      </div>
+    </div>
+
     <script>
       const LIVE_API_BASE = "https://open.er-api.com/v6/latest/";
       const HISTORY_API_BASE = "https://api.frankfurter.dev/v1/";
@@ -1225,6 +1404,24 @@
         PLN: "波兰兹罗提"
       };
 
+      const currencyAliases = {
+        USD: ["dollar", "us dollar", "usdollar", "美金"],
+        EUR: ["euro", "欧盟"],
+        GBP: ["pound", "sterling", "英镑"],
+        CNY: ["rmb", "yuan", "renminbi", "人民币", "元"],
+        JPY: ["yen", "日元"],
+        SGD: ["singapore", "singapore dollar", "新币"],
+        MYR: ["ringgit", "malaysia", "马币", "林吉特"],
+        HKD: ["hong kong", "港币"],
+        KRW: ["won", "韩元"],
+        THB: ["baht", "泰铢"],
+        AUD: ["australian dollar", "澳元"],
+        CAD: ["canadian dollar", "加元"],
+        CHF: ["swiss franc", "法郎"],
+        AED: ["dirham", "迪拉姆"],
+        INR: ["rupee", "卢比"]
+      };
+
       const state = {
         base: "USD",
         target: "EUR",
@@ -1239,7 +1436,9 @@
         historyNames: {},
         historyCache: {},
         autoRefreshMinutes: 60,
-        timer: null
+        timer: null,
+        pickerField: "",
+        pickerOptions: []
       };
 
       const elements = {
@@ -1247,6 +1446,8 @@
         resultDisplay: document.getElementById("resultDisplay"),
         baseSelect: document.getElementById("baseSelect"),
         targetSelect: document.getElementById("targetSelect"),
+        basePickerButton: document.getElementById("basePickerButton"),
+        targetPickerButton: document.getElementById("targetPickerButton"),
         swapButton: document.getElementById("swapButton"),
         refreshButton: document.getElementById("refreshButton"),
         addTargetButton: document.getElementById("addTargetButton"),
@@ -1267,16 +1468,23 @@
         infoWatchCount: document.getElementById("infoWatchCount"),
         watchSelect: document.getElementById("watchSelect"),
         watchAddButton: document.getElementById("watchAddButton"),
+        watchPickerButton: document.getElementById("watchPickerButton"),
         watchChips: document.getElementById("watchChips"),
         watchEmpty: document.getElementById("watchEmpty"),
         rateGrid: document.getElementById("rateGrid"),
         chartTargetSelect: document.getElementById("chartTargetSelect"),
         historyRefreshButton: document.getElementById("historyRefreshButton"),
+        chartPickerButton: document.getElementById("chartPickerButton"),
         rangeToggle: document.getElementById("rangeToggle"),
         chartStats: document.getElementById("chartStats"),
         chartCanvas: document.getElementById("chartCanvas"),
         chartMeta: document.getElementById("chartMeta"),
-        chartHint: document.getElementById("chartHint")
+        chartHint: document.getElementById("chartHint"),
+        pickerModal: document.getElementById("pickerModal"),
+        pickerTitle: document.getElementById("pickerTitle"),
+        pickerCloseButton: document.getElementById("pickerCloseButton"),
+        pickerSearchInput: document.getElementById("pickerSearchInput"),
+        pickerList: document.getElementById("pickerList")
       };
 
       function normalizeCode(value) {
@@ -1285,6 +1493,12 @@
 
       function currencyName(code) {
         return currencyCatalog[code] || state.historyNames[code] || code;
+      }
+
+      function currencySearchText(code) {
+        const aliases = currencyAliases[code] || [];
+        const historyName = state.historyNames[code] || "";
+        return [code, currencyName(code), historyName, aliases.join(" ")].join(" ").toLowerCase();
       }
 
       function formatAmount(value) {
@@ -1326,6 +1540,126 @@
           .map((code) => `<option value="${code}">${code} · ${currencyName(code)}</option>`)
           .join("");
         select.value = nextSelected;
+      }
+
+      function getPickerOptions(field) {
+        const defaults = Object.keys(currencyCatalog);
+        if (field === "base") {
+          return state.supportedCodes.length ? state.supportedCodes : defaults;
+        }
+        if (field === "target" || field === "watch") {
+          const source = state.supportedCodes.length ? state.supportedCodes : defaults;
+          return source.filter((code) => code !== state.base);
+        }
+        if (field === "chart") {
+          return Array.from(new Set([state.target, ...state.watchlist])).filter((code) => code !== state.base);
+        }
+        return defaults;
+      }
+
+      function renderPickerList(query = "") {
+        const keyword = query.trim().toLowerCase();
+        let options = state.pickerOptions.slice();
+        if (keyword) {
+          options = options.filter((code) => currencySearchText(code).includes(keyword));
+          options.sort((a, b) => {
+            const aExact = a.toLowerCase() === keyword || currencyName(a).toLowerCase() === keyword;
+            const bExact = b.toLowerCase() === keyword || currencyName(b).toLowerCase() === keyword;
+            return Number(bExact) - Number(aExact);
+          });
+        }
+
+        if (!options.length) {
+          elements.pickerList.innerHTML = '<div class="picker-empty">没有找到匹配的货币。</div>';
+          return;
+        }
+
+        elements.pickerList.innerHTML = options
+          .map(
+            (code) => `
+              <button class="picker-option" type="button" data-pick-code="${code}">
+                <div>
+                  <strong>${currencyName(code)}</strong>
+                  <span>${state.historyNames[code] || "Currency"} · ${code}</span>
+                </div>
+                <code>${code}</code>
+              </button>
+            `
+          )
+          .join("");
+      }
+
+      function openPicker(field) {
+        const titleMap = {
+          base: "搜索基础货币",
+          target: "搜索目标货币",
+          watch: "搜索观察币种",
+          chart: "搜索图表币种"
+        };
+
+        state.pickerField = field;
+        state.pickerOptions = getPickerOptions(field);
+        elements.pickerTitle.textContent = titleMap[field] || "搜索货币";
+        elements.pickerSearchInput.value = "";
+        renderPickerList("");
+        elements.pickerModal.hidden = false;
+        document.body.style.overflow = "hidden";
+        window.setTimeout(() => elements.pickerSearchInput.focus(), 40);
+      }
+
+      function closePicker() {
+        state.pickerField = "";
+        state.pickerOptions = [];
+        elements.pickerModal.hidden = true;
+        document.body.style.overflow = "";
+      }
+
+      function applyPickerSelection(code) {
+        const picked = normalizeCode(code);
+        if (!picked) return;
+
+        if (state.pickerField === "base") {
+          state.base = picked;
+          state.watchlist = state.watchlist.filter((item) => item !== state.base);
+          saveState();
+          closePicker();
+          fetchRates();
+          return;
+        }
+
+        if (state.pickerField === "target") {
+          state.target = picked;
+          saveState();
+          closePicker();
+          syncSelects();
+          updateMetrics();
+          renderConverter();
+          fetchHistory(true);
+          return;
+        }
+
+        if (state.pickerField === "watch") {
+          if (picked !== state.base && !state.watchlist.includes(picked)) {
+            state.watchlist.push(picked);
+          }
+          saveState();
+          closePicker();
+          syncSelects();
+          renderWatchChips();
+          renderRateCards();
+          updateMetrics();
+          return;
+        }
+
+        if (state.pickerField === "chart") {
+          state.target = picked;
+          saveState();
+          closePicker();
+          syncSelects();
+          updateMetrics();
+          renderConverter();
+          fetchHistory(true);
+        }
       }
 
       function saveState() {
@@ -1688,6 +2022,14 @@
         renderRateCards();
       });
 
+      elements.basePickerButton.addEventListener("click", () => {
+        openPicker("base");
+      });
+
+      elements.targetPickerButton.addEventListener("click", () => {
+        openPicker("target");
+      });
+
       elements.baseSelect.addEventListener("change", () => {
         state.base = normalizeCode(elements.baseSelect.value);
         state.watchlist = state.watchlist.filter((code) => code !== state.base);
@@ -1698,6 +2040,7 @@
       elements.targetSelect.addEventListener("change", () => {
         state.target = normalizeCode(elements.targetSelect.value);
         saveState();
+        updateMetrics();
         renderConverter();
         updateHistoryTargetSelect();
         fetchHistory(true);
@@ -1707,6 +2050,7 @@
         state.target = normalizeCode(elements.chartTargetSelect.value);
         elements.targetSelect.value = state.target;
         saveState();
+        updateMetrics();
         renderConverter();
         fetchHistory(true);
       });
@@ -1752,6 +2096,14 @@
         }
       });
 
+      elements.watchPickerButton.addEventListener("click", () => {
+        openPicker("watch");
+      });
+
+      elements.chartPickerButton.addEventListener("click", () => {
+        openPicker("chart");
+      });
+
       elements.watchChips.addEventListener("click", (event) => {
         const button = event.target.closest("[data-remove]");
         if (!button) return;
@@ -1779,8 +2131,32 @@
         fetchHistory(true);
       });
 
+      elements.pickerCloseButton.addEventListener("click", closePicker);
+
+      elements.pickerSearchInput.addEventListener("input", () => {
+        renderPickerList(elements.pickerSearchInput.value);
+      });
+
+      elements.pickerList.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-pick-code]");
+        if (!option) return;
+        applyPickerSelection(option.dataset.pickCode);
+      });
+
+      elements.pickerModal.addEventListener("click", (event) => {
+        if (event.target === elements.pickerModal) {
+          closePicker();
+        }
+      });
+
       window.addEventListener("online", updateNetworkState);
       window.addEventListener("offline", updateNetworkState);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !elements.pickerModal.hidden) {
+          closePicker();
+        }
+      });
 
       function init() {
         loadState();
