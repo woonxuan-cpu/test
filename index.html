@@ -3,417 +3,803 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f4efe8" />
-    <title>实时汇率追踪 Mini Web App</title>
+    <meta name="theme-color" content="#0f1f57" />
+    <title>FX Pulse | 汇率换算与走势追踪</title>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap");
 
       :root {
-        --bg: #f4efe8;
-        --bg-2: #efe1d3;
-        --ink: #1a1a1a;
-        --muted: #545a65;
-        --card: rgba(255, 255, 255, 0.8);
-        --stroke: rgba(26, 26, 26, 0.08);
-        --accent: #ff7a59;
-        --accent-2: #1b9aaa;
-        --accent-3: #f5c542;
-        --danger: #b42318;
-        --success: #0f8b5c;
-        --shadow: 0 30px 60px rgba(28, 36, 46, 0.16);
+        --navy: #0f1f57;
+        --navy-deep: #0a153b;
+        --navy-soft: #18307b;
+        --blue: #2d6df6;
+        --blue-soft: #edf3ff;
+        --cyan: #2aa7c8;
+        --text: #11203f;
+        --muted: #61708b;
+        --line: #d7e1f2;
+        --surface: #ffffff;
+        --surface-alt: #f5f8fe;
+        --success: #12845f;
+        --danger: #d44a53;
+        --shadow: 0 24px 60px rgba(12, 31, 83, 0.14);
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
         margin: 0;
-        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-        color: var(--ink);
+        font-family: "Noto Sans SC", sans-serif;
+        color: var(--text);
         background:
-          radial-gradient(900px 500px at 12% 8%, rgba(27, 154, 170, 0.2), transparent 60%),
-          radial-gradient(900px 520px at 90% 20%, rgba(255, 122, 89, 0.18), transparent 55%),
-          linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%);
-        min-height: 100vh;
+          radial-gradient(circle at top right, rgba(45, 109, 246, 0.08), transparent 22%),
+          linear-gradient(180deg, #f6f8fe 0%, #eff4fb 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03));
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
       }
 
       .app {
-        max-width: 1200px;
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 32px 20px 40px;
+        padding: 20px 0 48px;
       }
 
-      header.hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-        gap: 24px;
+      .topbar {
+        display: flex;
         align-items: center;
-        margin-bottom: 28px;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
       }
 
-      .title h1 {
-        margin: 10px 0 8px;
-        font-family: "Bricolage Grotesque", "Noto Sans SC", sans-serif;
-        font-size: clamp(30px, 5vw, 44px);
-        letter-spacing: 0.4px;
-      }
-
-      .title p {
-        margin: 0 0 18px;
-        color: var(--muted);
-        font-size: 15px;
-      }
-
-      .pill {
+      .brand {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: rgba(27, 154, 170, 0.16);
-        color: var(--accent-2);
-        font-weight: 600;
-        font-size: 12px;
-        letter-spacing: 0.4px;
-      }
-
-      .quick-base {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-      }
-
-      .quick-base span {
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .quick-base button {
-        border: 1px solid rgba(27, 154, 170, 0.2);
-        background: rgba(255, 255, 255, 0.86);
-        color: var(--ink);
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .quick-base button.active,
-      .quick-base button:hover {
-        background: var(--accent-2);
-        color: #fff;
-        border-color: var(--accent-2);
-      }
-
-      .metrics {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
       }
 
-      .metric {
-        background: var(--card);
-        border: 1px solid var(--stroke);
-        border-radius: 16px;
-        padding: 14px 16px;
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-family: "Manrope", sans-serif;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+        box-shadow: 0 14px 28px rgba(16, 31, 86, 0.2);
+      }
+
+      .brand-copy strong,
+      h1,
+      h2,
+      h3,
+      .metric strong,
+      .rate-value,
+      .chart-stat strong {
+        font-family: "Manrope", "Noto Sans SC", sans-serif;
+      }
+
+      .brand-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .brand-copy strong {
+        font-size: 15px;
+      }
+
+      .brand-copy span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .topnav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .topnav a,
+      .ghost-button {
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: transparent;
+        transition: all 0.2s ease;
+      }
+
+      .topnav a:hover,
+      .ghost-button:hover {
+        color: var(--navy);
+        background: rgba(255, 255, 255, 0.72);
+        border-color: rgba(17, 32, 63, 0.08);
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.85fr);
+        gap: 28px;
+        padding: 32px;
+        border-radius: 32px;
+        color: #fff;
+        background:
+          radial-gradient(circle at 20% 10%, rgba(66, 135, 245, 0.32), transparent 34%),
+          linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 52%, var(--navy-soft) 100%);
         box-shadow: var(--shadow);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        right: -120px;
+        top: -60px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 62%);
+      }
+
+      .hero-copy {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 16px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 0.96;
+        letter-spacing: -0.04em;
+      }
+
+      .hero-copy p {
+        margin: 0;
+        max-width: 640px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .hero-highlights {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .hero-chip {
+        padding: 10px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .hero-side {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 14px;
+      }
+
+      .hero-note,
+      .hero-metrics {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(12px);
       }
 
-      .metric span {
+      .hero-note {
+        border-radius: 24px;
+        padding: 20px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .hero-note span {
         font-size: 12px;
-        color: var(--muted);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .hero-note strong {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      .hero-note p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .hero-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 14px;
+        border-radius: 24px;
+      }
+
+      .metric {
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .metric span {
+        display: block;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 11px;
       }
 
       .metric strong {
         display: block;
         margin-top: 6px;
-        font-size: 15px;
+        font-size: 16px;
       }
 
-      main.grid {
-        display: grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.2fr);
-        gap: 24px;
+      .converter-wrap {
+        margin-top: -48px;
+        position: relative;
+        z-index: 2;
       }
 
-      .stack {
+      .converter-grid {
         display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
         gap: 18px;
       }
 
       .panel {
-        background: var(--card);
-        border: 1px solid var(--stroke);
-        border-radius: 20px;
-        padding: 20px;
+        background: var(--surface);
+        border: 1px solid rgba(17, 32, 63, 0.08);
+        border-radius: 28px;
         box-shadow: var(--shadow);
-        backdrop-filter: blur(12px);
-        position: relative;
-        overflow: hidden;
       }
 
-      .panel::after {
-        content: "";
-        position: absolute;
-        inset: -60% auto auto -30%;
-        width: 220px;
-        height: 220px;
-        background: radial-gradient(circle, rgba(245, 197, 66, 0.22), transparent 70%);
-        pointer-events: none;
+      .converter-card {
+        padding: 24px;
       }
 
-      .panel h2 {
-        margin: 0 0 16px;
-        font-size: 16px;
-        font-family: "Bricolage Grotesque", "Noto Sans SC", sans-serif;
-        letter-spacing: 0.2px;
-      }
-
-      .field {
-        display: grid;
-        gap: 10px;
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
         margin-bottom: 18px;
       }
 
-      label {
-        font-size: 12px;
+      .panel-head h2 {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: -0.03em;
+      }
+
+      .panel-head p {
+        margin: 6px 0 0;
         color: var(--muted);
+        font-size: 13px;
       }
 
-      input,
-      select,
-      button {
-        font-family: inherit;
+      .status-pill {
+        flex: 0 0 auto;
+        padding: 10px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: var(--blue-soft);
+        color: var(--blue);
       }
 
-      input[type="text"],
-      input[type="number"],
-      select {
-        width: 100%;
-        padding: 12px 14px;
-        border-radius: 12px;
-        border: 1px solid transparent;
-        background: rgba(255, 255, 255, 0.95);
-        font-size: 14px;
-        outline: none;
-        transition: all 0.2s ease;
-      }
-
-      input:focus,
-      select:focus {
-        border-color: rgba(27, 154, 170, 0.4);
-        box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.15);
-      }
-
-      .row {
+      .converter-stack {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .field-card {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 18px;
+        background: #fff;
+      }
+
+      .field-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .field-label span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 210px;
+        gap: 12px;
+      }
+
+      .amount-input,
+      .currency-select,
+      .watch-select,
+      .chart-select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: var(--surface-alt);
+        border-radius: 18px;
+        color: var(--text);
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .amount-input:focus,
+      .currency-select:focus,
+      .watch-select:focus,
+      .chart-select:focus {
+        border-color: rgba(45, 109, 246, 0.42);
+        box-shadow: 0 0 0 4px rgba(45, 109, 246, 0.12);
+      }
+
+      .amount-input {
+        padding: 16px 18px;
+        font-family: "Manrope", sans-serif;
+        font-size: clamp(28px, 4vw, 40px);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .currency-select,
+      .watch-select,
+      .chart-select {
+        padding: 16px 16px;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .swap-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .swap-button {
+        width: 52px;
+        height: 52px;
+        border: none;
+        border-radius: 18px;
+        color: var(--navy);
+        background: var(--blue-soft);
+        box-shadow: inset 0 0 0 1px rgba(45, 109, 246, 0.08);
+        font-size: 22px;
+        font-weight: 800;
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      .swap-button:hover {
+        transform: rotate(180deg);
+        background: rgba(45, 109, 246, 0.16);
+      }
+
+      .conversion-summary {
+        border-radius: 24px;
+        padding: 18px;
+        color: #fff;
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+        display: grid;
+        gap: 12px;
+      }
+
+      .conversion-summary span {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .conversion-result {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .conversion-result strong {
+        font-family: "Manrope", sans-serif;
+        font-size: clamp(34px, 5vw, 46px);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .conversion-result small {
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .summary-meta {
+        display: grid;
+        gap: 6px;
+      }
+
+      .summary-meta p,
+      .summary-meta div {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+      }
+
+      .converter-actions {
+        display: flex;
+        flex-wrap: wrap;
         gap: 10px;
       }
 
-      .row.three {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-      }
-
-      .btn {
+      .primary-button,
+      .secondary-button {
         border: none;
+        border-radius: 999px;
         padding: 12px 16px;
-        border-radius: 12px;
-        background: linear-gradient(120deg, var(--accent) 0%, #ff946a 40%, var(--accent-2) 100%);
-        color: #fff;
-        font-weight: 600;
-        cursor: pointer;
+        font-size: 13px;
+        font-weight: 800;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        box-shadow: 0 18px 28px rgba(255, 122, 89, 0.25);
       }
 
-      .btn:hover {
+      .primary-button {
+        color: #fff;
+        background: linear-gradient(135deg, var(--blue) 0%, #3d7bfb 100%);
+        box-shadow: 0 16px 30px rgba(45, 109, 246, 0.24);
+      }
+
+      .secondary-button {
+        color: var(--navy);
+        background: #fff;
+      }
+
+      .primary-button:hover,
+      .secondary-button:hover {
         transform: translateY(-1px);
-        box-shadow: 0 22px 32px rgba(255, 122, 89, 0.32);
       }
 
-      .btn.secondary {
-        background: rgba(27, 154, 170, 0.15);
-        color: var(--accent-2);
-        box-shadow: none;
+      .insight-card {
+        padding: 24px;
+        display: grid;
+        gap: 16px;
       }
 
-      .chip-list {
+      .insight-card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .insight-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .info-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: var(--surface-alt);
+        border: 1px solid var(--line);
+      }
+
+      .info-row span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .info-row strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 14px;
+      }
+
+      .mini-card {
+        padding: 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff 0%, #f9fbff 100%);
+      }
+
+      .mini-card span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .mini-card strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 20px;
+      }
+
+      .grid-sections {
+        display: grid;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .section-panel {
+        padding: 24px;
+      }
+
+      .section-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .section-top h2 {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: -0.03em;
+      }
+
+      .section-top p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .market-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.88fr);
+        gap: 18px;
+      }
+
+      .watch-toolbar,
+      .chart-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .watch-toolbar label,
+      .chart-toolbar label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .watch-toolbar .watch-select,
+      .chart-toolbar .chart-select {
+        min-width: 180px;
+      }
+
+      .chip-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 10px;
+        margin-bottom: 16px;
       }
 
       .chip {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
+        gap: 8px;
+        padding: 10px 12px;
         border-radius: 999px;
-        border: 1px solid rgba(27, 154, 170, 0.2);
-        background: rgba(27, 154, 170, 0.12);
-        color: var(--accent-2);
+        border: 1px solid var(--line);
+        background: var(--surface-alt);
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
+        color: var(--navy);
       }
 
       .chip span {
-        font-weight: 500;
         color: var(--muted);
+        font-weight: 600;
       }
 
       .chip button {
+        width: 18px;
+        height: 18px;
         border: none;
-        background: transparent;
-        color: var(--accent-2);
-        font-size: 14px;
-        cursor: pointer;
-        padding: 0 2px;
+        border-radius: 50%;
+        padding: 0;
+        font-size: 13px;
+        line-height: 1;
+        color: var(--navy);
+        background: rgba(17, 32, 63, 0.08);
       }
 
-      .hint {
-        font-size: 12px;
-        color: var(--muted);
+      .rate-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
       }
 
-      .toggle {
-        display: inline-flex;
-        align-items: center;
+      .rate-card {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
+        display: grid;
         gap: 10px;
       }
 
-      .toggle input {
-        display: none;
+      .rate-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
       }
 
-      .toggle span {
-        width: 42px;
-        height: 24px;
-        border-radius: 999px;
-        background: rgba(27, 154, 170, 0.18);
-        position: relative;
-        cursor: pointer;
-        transition: background 0.2s ease;
-      }
-
-      .toggle span::after {
-        content: "";
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        top: 3px;
-        left: 3px;
-        background: #fff;
-        transition: transform 0.2s ease;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
-      }
-
-      .toggle input:checked + span {
-        background: var(--accent-2);
-      }
-
-      .toggle input:checked + span::after {
-        transform: translateX(18px);
-      }
-
-      .range {
-        display: grid;
-        gap: 6px;
-      }
-
-      input[type="range"] {
-        width: 100%;
-      }
-
-      .status {
-        padding: 12px;
-        border-radius: 12px;
-        background: rgba(27, 154, 170, 0.1);
+      .rate-code {
         display: grid;
         gap: 4px;
       }
 
-      .status .error {
-        color: var(--danger);
+      .rate-code strong {
+        font-family: "Manrope", sans-serif;
+        font-size: 18px;
       }
 
-      .status .ok {
-        color: var(--success);
-      }
-
-      .network {
-        font-size: 12px;
+      .rate-code span {
         color: var(--muted);
+        font-size: 12px;
       }
 
-      .cards {
+      .rate-badge {
+        padding: 6px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--muted);
+        background: rgba(17, 32, 63, 0.06);
+      }
+
+      .rate-badge.up {
+        color: var(--success);
+        background: rgba(18, 132, 95, 0.12);
+      }
+
+      .rate-badge.down {
+        color: var(--danger);
+        background: rgba(212, 74, 83, 0.12);
+      }
+
+      .rate-value {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .rate-meta {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .chart-panel {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 12px;
+        gap: 16px;
       }
 
-      .chart-controls {
-        display: grid;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-
-      .chart-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 10px;
-      }
-
-      .period-buttons {
+      .range-toggle {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
       }
 
-      .period-buttons button {
-        border: 1px solid rgba(27, 154, 170, 0.2);
-        background: rgba(255, 255, 255, 0.9);
+      .range-button {
+        border: 1px solid var(--line);
+        background: var(--surface-alt);
         color: var(--muted);
-        padding: 6px 12px;
+        padding: 9px 12px;
         border-radius: 999px;
         font-size: 12px;
-        cursor: pointer;
+        font-weight: 800;
         transition: all 0.2s ease;
       }
 
-      .period-buttons button.active,
-      .period-buttons button:hover {
-        background: var(--accent-2);
-        color: #fff;
-        border-color: var(--accent-2);
+      .range-button.active,
+      .range-button:hover {
+        color: var(--blue);
+        border-color: rgba(45, 109, 246, 0.18);
+        background: var(--blue-soft);
       }
 
       .chart-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
-        margin-bottom: 12px;
       }
 
       .chart-stat {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 14px;
-        padding: 10px 12px;
-        border: 1px solid rgba(26, 26, 26, 0.08);
-        font-size: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface-alt);
+      }
+
+      .chart-stat span {
         color: var(--muted);
+        font-size: 12px;
       }
 
       .chart-stat strong {
         display: block;
         margin-top: 4px;
-        font-size: 14px;
-        color: var(--ink);
+        font-size: 17px;
       }
 
       .chart-stat strong.up {
@@ -425,297 +811,401 @@
       }
 
       .chart-canvas {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid rgba(26, 26, 26, 0.08);
-        border-radius: 16px;
-        padding: 12px;
-        min-height: 240px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 16px;
+        min-height: 280px;
+        background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
       }
 
       .chart-canvas svg {
         width: 100%;
-        height: 240px;
+        height: 248px;
         display: block;
+      }
+
+      .chart-meta,
+      .chart-hint,
+      .empty-text,
+      .footer-note {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
       }
 
       .chart-meta {
         display: flex;
         justify-content: space-between;
-        margin-top: 8px;
-        font-size: 12px;
-        color: var(--muted);
+        gap: 12px;
+        flex-wrap: wrap;
       }
 
-      .rate-card {
-        background: rgba(255, 255, 255, 0.92);
-        border-radius: 16px;
-        border: 1px solid rgba(26, 26, 26, 0.08);
-        padding: 14px;
+      .tools-grid {
         display: grid;
-        gap: 8px;
-        animation: rise 0.6s ease forwards;
-        animation-delay: var(--delay, 0s);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
       }
 
-      .rate-card.flash {
-        border-color: rgba(27, 154, 170, 0.5);
-        box-shadow: 0 18px 26px rgba(27, 154, 170, 0.2);
+      .tool-card {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff 0%, #f7faff 100%);
+        display: grid;
+        gap: 10px;
       }
 
-      .rate-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-
-      .rate-header strong {
-        font-size: 16px;
-      }
-
-      .rate-header small {
-        color: var(--muted);
-      }
-
-      .delta {
+      .tool-card span {
+        color: var(--blue);
         font-size: 12px;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: rgba(0, 0, 0, 0.06);
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .tool-card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .tool-card p {
+        margin: 0;
         color: var(--muted);
-        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.7;
       }
 
-      .delta.up {
-        background: rgba(15, 139, 92, 0.16);
-        color: var(--success);
+      .footer-note {
+        margin-top: 18px;
+        text-align: center;
       }
 
-      .delta.down {
-        background: rgba(180, 35, 24, 0.12);
-        color: var(--danger);
-      }
-
-      .rate-main {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-      }
-
-      .rate-main span {
-        font-size: 22px;
-        font-weight: 700;
-      }
-
-      .rate-sub {
-        font-size: 12px;
-        color: var(--muted);
-        line-height: 1.5;
-      }
-
-      .empty {
-        padding: 16px;
-        border-radius: 14px;
-        border: 1px dashed rgba(255, 122, 89, 0.4);
-        background: rgba(255, 122, 89, 0.08);
-        color: #8b1f0f;
-        font-size: 12px;
-        display: none;
-      }
-
-      footer {
-        margin-top: 20px;
-        font-size: 12px;
-        color: var(--muted);
-        line-height: 1.6;
-      }
-
-      footer a {
-        color: var(--accent-2);
+      .footer-note a {
+        color: var(--blue);
         text-decoration: none;
       }
 
-      @keyframes rise {
-        from {
-          opacity: 0;
-          transform: translateY(12px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
       @media (max-width: 980px) {
-        header.hero {
+        .hero,
+        .converter-grid,
+        .market-layout {
           grid-template-columns: 1fr;
         }
 
-        .metrics {
+        .converter-wrap {
+          margin-top: 18px;
+        }
+
+        .hero-metrics {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        main.grid {
+        .tools-grid {
           grid-template-columns: 1fr;
         }
       }
 
-      @media (max-width: 640px) {
-        .metrics {
+      @media (max-width: 760px) {
+        .app {
+          width: min(100%, calc(100% - 20px));
+          padding-top: 12px;
+        }
+
+        .topbar,
+        .panel-head,
+        .section-top,
+        .field-grid {
           grid-template-columns: 1fr;
         }
 
-        .row,
-        .row.three,
-        .chart-row {
+        .topbar,
+        .panel-head,
+        .section-top {
+          display: grid;
+        }
+
+        .hero,
+        .converter-card,
+        .insight-card,
+        .section-panel {
+          padding: 18px;
+        }
+
+        .hero-metrics,
+        .rate-grid,
+        .chart-stats {
           grid-template-columns: 1fr;
         }
-      }
 
-      @media (prefers-reduced-motion: reduce) {
-        .rate-card {
-          animation: none;
+        .field-grid {
+          display: grid;
+        }
+
+        .amount-input {
+          font-size: 32px;
         }
       }
     </style>
   </head>
   <body>
     <div class="app">
-      <header class="hero">
-        <div class="title">
-          <span class="pill">FX PULSE · MINI APP</span>
-          <h1>实时追踪货币汇率</h1>
-          <p>手机/电脑自适应。自动刷新、缓存兜底、汇率变化一眼看懂。</p>
-          <div class="quick-base" id="quickBase">
-            <span>快速基准</span>
-            <button type="button" data-base="USD">USD</button>
-            <button type="button" data-base="EUR">EUR</button>
-            <button type="button" data-base="CNY">CNY</button>
-            <button type="button" data-base="JPY">JPY</button>
-            <button type="button" data-base="GBP">GBP</button>
-            <button type="button" data-base="SGD">SGD</button>
-            <button type="button" data-base="MYR">MYR</button>
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">FX</div>
+          <div class="brand-copy">
+            <strong>FX Pulse</strong>
+            <span>Currency converter and market dashboard</span>
           </div>
         </div>
-        <div class="metrics">
-          <div class="metric">
-            <span>本地刷新时间</span>
-            <strong id="fetchedAt">--</strong>
-          </div>
-          <div class="metric">
-            <span>数据更新时间 (UTC)</span>
-            <strong id="dataUpdatedAt">--</strong>
-          </div>
-          <div class="metric">
-            <span>下次数据更新 (UTC)</span>
-            <strong id="dataNextAt">--</strong>
-          </div>
-        </div>
+        <nav class="topnav">
+          <a href="#converter">汇率换算</a>
+          <a href="#rates">实时牌价</a>
+          <a href="#history">历史走势</a>
+          <a href="#tools">工具模块</a>
+        </nav>
       </header>
 
-      <main class="grid">
-        <section class="panel" aria-label="设置">
-          <h2>设置</h2>
-          <div class="field">
-            <label for="baseInput">基准货币与金额</label>
-            <div class="row">
-              <input id="baseInput" type="text" list="currencyList" placeholder="USD" />
-              <input id="amountInput" type="number" min="0" step="0.01" value="100" />
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Currency Converter</div>
+          <h1>把汇率工具做得更像专业金融产品。</h1>
+          <p>
+            这版界面参考了 XE 现在的产品节奏：深色品牌头图、中央白卡换汇模块、紧接着是实时牌价和走势图。不是照抄，而是把你这套 mini app
+            调成同一种专业、克制、可信赖的视觉方向。
+          </p>
+          <div class="hero-highlights">
+            <div class="hero-chip">实时换算</div>
+            <div class="hero-chip">观察列表</div>
+            <div class="hero-chip">历史走势图</div>
+            <div class="hero-chip">手机和桌面自适应</div>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="hero-note">
+            <span>Market Snapshot</span>
+            <strong id="headlinePair">USD / EUR</strong>
+            <p id="headlineNote">等待首次汇率数据。</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric">
+              <span>本地刷新时间</span>
+              <strong id="metricFetchedAt">--</strong>
+            </div>
+            <div class="metric">
+              <span>数据更新时间</span>
+              <strong id="metricUpdatedAt">--</strong>
+            </div>
+            <div class="metric">
+              <span>下次更新</span>
+              <strong id="metricNextAt">--</strong>
             </div>
           </div>
-          <div class="field">
-            <label>追踪币种</label>
-            <div class="chip-list" id="targetChips"></div>
-            <div class="row three">
-              <input id="addCodeInput" type="text" list="currencyList" placeholder="输入币种代码或名称" />
-              <button class="btn secondary" id="addCodeBtn" type="button">添加币种</button>
-              <button class="btn" id="refreshNow" type="button">立即更新</button>
+        </div>
+      </section>
+
+      <section class="converter-wrap" id="converter">
+        <div class="converter-grid">
+          <div class="panel converter-card">
+            <div class="panel-head">
+              <div>
+                <h2>汇率换算</h2>
+                <p>输入金额并选择货币，页面会直接给出 mid-market 换算结果。</p>
+              </div>
+              <div class="status-pill" id="networkState">网络状态：检测中</div>
             </div>
-            <div class="hint" id="supportHint">支持 ISO 4217 代码，例如 USD、EUR、CNY。</div>
-          </div>
-          <div class="field">
-            <label>自动刷新</label>
-            <div class="row">
-              <label class="toggle">
-                <input id="autoRefreshToggle" type="checkbox" checked />
-                <span aria-hidden="true"></span>
-              </label>
-              <div class="range">
-                <input id="refreshRange" type="range" min="60" max="360" step="30" value="60" />
-                <span class="hint" id="refreshValue">60 分钟/次</span>
+
+            <div class="converter-stack">
+              <div class="field-card">
+                <div class="field-label">
+                  <span>From</span>
+                </div>
+                <div class="field-grid">
+                  <input id="amountInput" class="amount-input" type="number" min="0" step="0.01" value="1" />
+                  <select id="baseSelect" class="currency-select"></select>
+                </div>
+              </div>
+
+              <div class="swap-row">
+                <button id="swapButton" class="swap-button" type="button" aria-label="交换货币">⇅</button>
+              </div>
+
+              <div class="field-card">
+                <div class="field-label">
+                  <span>To</span>
+                </div>
+                <div class="field-grid">
+                  <input id="resultDisplay" class="amount-input" type="text" value="--" readonly />
+                  <select id="targetSelect" class="currency-select"></select>
+                </div>
+              </div>
+
+              <div class="conversion-summary">
+                <span>Live Rate</span>
+                <div class="conversion-result">
+                  <strong id="pairRate">--</strong>
+                  <small id="pairLabel">EUR</small>
+                </div>
+                <div class="summary-meta">
+                  <div id="inverseRate">1 EUR = -- USD</div>
+                  <p id="midMarketNote">Mid-market rate at --</p>
+                </div>
+                <div class="converter-actions">
+                  <button class="primary-button" id="refreshButton" type="button">立即更新汇率</button>
+                  <button class="secondary-button" id="addTargetButton" type="button">添加到观察列表</button>
+                </div>
               </div>
             </div>
-            <div class="hint" id="refreshHint">公开接口每日更新，建议 ≥ 60 分钟/次。</div>
           </div>
-          <div class="status" id="statusBox">
-            <div id="statusText">等待首次拉取汇率。</div>
-            <div class="network" id="networkState">网络状态：检测中</div>
+
+          <aside class="panel insight-card">
+            <div class="panel-head" style="margin-bottom: 0;">
+              <div>
+                <h2>市场信息</h2>
+                <p>把你最关心的状态、刷新和数据说明放到同一张信息卡里。</p>
+              </div>
+            </div>
+
+            <div class="info-list">
+              <div class="info-row">
+                <div>
+                  <span>基础货币</span>
+                  <strong id="infoBase">USD</strong>
+                </div>
+                <div>
+                  <span>目标货币</span>
+                  <strong id="infoTarget">EUR</strong>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div>
+                  <span>自动刷新</span>
+                  <strong id="infoRefresh">60 分钟</strong>
+                </div>
+                <div>
+                  <span>观察币种</span>
+                  <strong id="infoWatchCount">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <span>说明</span>
+              <strong id="statusMessage">等待首次数据拉取。</strong>
+            </div>
+
+            <div class="mini-card">
+              <span>数据源</span>
+              <strong>ExchangeRate-API + Frankfurter</strong>
+              <p style="margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65;">
+                实时换算使用最新公开汇率，历史走势使用 ECB 驱动的时间序列数据。
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <main class="grid-sections">
+        <section class="panel section-panel" id="rates">
+          <div class="section-top">
+            <div>
+              <h2>实时牌价</h2>
+              <p>这部分参考 XE 的 live exchange rates 区块，用观察列表来快速浏览重点币种。</p>
+            </div>
           </div>
+
+          <div class="watch-toolbar">
+            <label for="watchSelect">添加币种</label>
+            <select id="watchSelect" class="watch-select"></select>
+            <button class="primary-button" id="watchAddButton" type="button">加入列表</button>
+          </div>
+
+          <div class="chip-row" id="watchChips"></div>
+          <div class="rate-grid" id="rateGrid"></div>
+          <div class="empty-text" id="watchEmpty">当前还没有观察币种。</div>
         </section>
 
-        <div class="stack">
-          <section class="panel" aria-label="汇率看板">
-            <h2>实时汇率看板</h2>
-            <div class="cards" id="rateCards"></div>
-            <div class="empty" id="emptyState">当前没有追踪的币种，请先添加。</div>
-          </section>
-
-          <section class="panel" aria-label="历史走势图">
-            <h2>历史走势图</h2>
-            <div class="chart-controls">
-              <div class="chart-row">
-                <div>
-                  <label for="chartTarget">图表币种</label>
-                  <select id="chartTarget"></select>
-                </div>
-                <div>
-                  <label>&nbsp;</label>
-                  <button class="btn secondary" id="refreshHistory" type="button">更新历史</button>
-                </div>
-              </div>
-              <div class="period-buttons" id="chartPeriods">
-                <button type="button" data-days="7">7 天</button>
-                <button type="button" data-days="30" class="active">30 天</button>
-                <button type="button" data-days="90">90 天</button>
-                <button type="button" data-days="180">180 天</button>
-              </div>
-              <div class="hint" id="chartHint">历史数据来自 Frankfurter (ECB)，仅支持部分币种。</div>
+        <section class="panel section-panel" id="history">
+          <div class="section-top">
+            <div>
+              <h2>历史走势图</h2>
+              <p>图表跟随当前换算货币对，也可以手动切换时间范围查看更长的波动区间。</p>
             </div>
-            <div class="chart-stats" id="chartMetrics"></div>
-            <div class="chart-canvas" id="chartCanvas"></div>
-            <div class="chart-meta" id="chartMeta"></div>
-            <div class="empty" id="chartEmpty">暂无历史数据可显示。</div>
-          </section>
-        </div>
+          </div>
+
+          <div class="chart-toolbar">
+            <label for="chartTargetSelect">图表币种</label>
+            <select id="chartTargetSelect" class="chart-select"></select>
+            <button class="secondary-button" id="historyRefreshButton" type="button">刷新历史数据</button>
+          </div>
+
+          <div class="range-toggle" id="rangeToggle">
+            <button class="range-button active" type="button" data-range="7">7 天</button>
+            <button class="range-button" type="button" data-range="30">30 天</button>
+            <button class="range-button" type="button" data-range="90">90 天</button>
+            <button class="range-button" type="button" data-range="180">180 天</button>
+          </div>
+
+          <div class="chart-stats" id="chartStats"></div>
+          <div class="chart-canvas" id="chartCanvas"></div>
+          <div class="chart-meta" id="chartMeta"></div>
+          <div class="chart-hint" id="chartHint">等待历史数据。</div>
+        </section>
+
+        <section class="panel section-panel" id="tools">
+          <div class="section-top">
+            <div>
+              <h2>工具模块</h2>
+              <p>把 XE 页面里那种“工具导航区”的感觉做出来，方便后面继续扩展提醒、对比和 API 功能。</p>
+            </div>
+          </div>
+
+          <div class="tools-grid">
+            <article class="tool-card">
+              <span>Alerts</span>
+              <h3>汇率提醒</h3>
+              <p>下一步可以在这个区块加入阈值提醒或邮件/Telegram 通知，不用重做页面结构。</p>
+            </article>
+            <article class="tool-card">
+              <span>Compare</span>
+              <h3>多币种观察</h3>
+              <p>当前已经有观察列表，后面可以扩展成多币种对比表或迷你 sparkline。</p>
+            </article>
+            <article class="tool-card">
+              <span>API</span>
+              <h3>数据接口升级</h3>
+              <p>如果你以后要更高频率或商用级数据，这块可以无缝替换成付费汇率源。</p>
+            </article>
+          </div>
+        </section>
       </main>
 
-      <footer>
-        实时汇率来自 ExchangeRate-API（Open Access），历史走势来自 Frankfurter（ECB）。
-        <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">Rates By Exchange Rate API</a>
-        <a href="https://frankfurter.dev" target="_blank" rel="noreferrer">Frankfurter API</a>
-      </footer>
+      <div class="footer-note">
+        实时汇率数据来自
+        <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">ExchangeRate-API</a>
+        ，历史数据来自
+        <a href="https://frankfurter.dev" target="_blank" rel="noreferrer">Frankfurter</a>。
+      </div>
     </div>
 
-    <datalist id="currencyList"></datalist>
-
     <script>
-      const API_BASE = "https://open.er-api.com/v6/latest/";
+      const LIVE_API_BASE = "https://open.er-api.com/v6/latest/";
       const HISTORY_API_BASE = "https://api.frankfurter.dev/v1/";
+      const STORAGE_KEY = "fx_pulse_xe_style_v1";
       const HISTORY_CACHE_TTL = 6 * 60 * 60 * 1000;
-      const STORAGE_KEY = "fx_tracker_state_v1";
 
-      const localCurrencyNames = {
+      const currencyCatalog = {
         USD: "美元",
         EUR: "欧元",
+        GBP: "英镑",
         CNY: "人民币",
         JPY: "日元",
-        GBP: "英镑",
+        SGD: "新币",
+        MYR: "马币",
         AUD: "澳元",
         CAD: "加元",
         CHF: "瑞士法郎",
         HKD: "港币",
-        SGD: "新币",
-        MYR: "马币",
         THB: "泰铢",
         KRW: "韩元",
         INR: "印度卢比",
@@ -729,71 +1219,72 @@
         AED: "阿联酋迪拉姆",
         SAR: "沙特里亚尔",
         MXN: "墨西哥比索",
-        ZAR: "南非兰特"
+        ZAR: "南非兰特",
+        TRY: "土耳其里拉",
+        BRL: "巴西雷亚尔",
+        PLN: "波兰兹罗提"
       };
 
       const state = {
         base: "USD",
-        amount: 100,
-        targets: ["EUR", "CNY", "JPY", "GBP", "SGD", "MYR"],
-        autoRefresh: true,
-        refreshMinutes: 60,
-        supportedCodes: [],
+        target: "EUR",
+        amount: 1,
+        watchlist: ["EUR", "GBP", "JPY", "CNY", "MYR", "SGD"],
         lastData: null,
         previousRates: null,
         lastFetchedAt: null,
-        timer: null,
-        historyTarget: "",
-        historyRangeDays: 30,
+        supportedCodes: [],
+        historyRange: 7,
         historySupported: [],
         historyNames: {},
-        historyCache: {}
+        historyCache: {},
+        autoRefreshMinutes: 60,
+        timer: null
       };
 
       const elements = {
-        baseInput: document.getElementById("baseInput"),
         amountInput: document.getElementById("amountInput"),
-        targetChips: document.getElementById("targetChips"),
-        addCodeInput: document.getElementById("addCodeInput"),
-        addCodeBtn: document.getElementById("addCodeBtn"),
-        refreshNow: document.getElementById("refreshNow"),
-        autoRefreshToggle: document.getElementById("autoRefreshToggle"),
-        refreshRange: document.getElementById("refreshRange"),
-        refreshValue: document.getElementById("refreshValue"),
-        refreshHint: document.getElementById("refreshHint"),
-        rateCards: document.getElementById("rateCards"),
-        emptyState: document.getElementById("emptyState"),
-        fetchedAt: document.getElementById("fetchedAt"),
-        dataUpdatedAt: document.getElementById("dataUpdatedAt"),
-        dataNextAt: document.getElementById("dataNextAt"),
-        statusText: document.getElementById("statusText"),
-        statusBox: document.getElementById("statusBox"),
-        supportHint: document.getElementById("supportHint"),
+        resultDisplay: document.getElementById("resultDisplay"),
+        baseSelect: document.getElementById("baseSelect"),
+        targetSelect: document.getElementById("targetSelect"),
+        swapButton: document.getElementById("swapButton"),
+        refreshButton: document.getElementById("refreshButton"),
+        addTargetButton: document.getElementById("addTargetButton"),
         networkState: document.getElementById("networkState"),
-        currencyList: document.getElementById("currencyList"),
-        quickBase: document.getElementById("quickBase"),
-        chartTarget: document.getElementById("chartTarget"),
-        chartPeriods: document.getElementById("chartPeriods"),
-        chartMetrics: document.getElementById("chartMetrics"),
+        pairRate: document.getElementById("pairRate"),
+        pairLabel: document.getElementById("pairLabel"),
+        inverseRate: document.getElementById("inverseRate"),
+        midMarketNote: document.getElementById("midMarketNote"),
+        statusMessage: document.getElementById("statusMessage"),
+        headlinePair: document.getElementById("headlinePair"),
+        headlineNote: document.getElementById("headlineNote"),
+        metricFetchedAt: document.getElementById("metricFetchedAt"),
+        metricUpdatedAt: document.getElementById("metricUpdatedAt"),
+        metricNextAt: document.getElementById("metricNextAt"),
+        infoBase: document.getElementById("infoBase"),
+        infoTarget: document.getElementById("infoTarget"),
+        infoRefresh: document.getElementById("infoRefresh"),
+        infoWatchCount: document.getElementById("infoWatchCount"),
+        watchSelect: document.getElementById("watchSelect"),
+        watchAddButton: document.getElementById("watchAddButton"),
+        watchChips: document.getElementById("watchChips"),
+        watchEmpty: document.getElementById("watchEmpty"),
+        rateGrid: document.getElementById("rateGrid"),
+        chartTargetSelect: document.getElementById("chartTargetSelect"),
+        historyRefreshButton: document.getElementById("historyRefreshButton"),
+        rangeToggle: document.getElementById("rangeToggle"),
+        chartStats: document.getElementById("chartStats"),
         chartCanvas: document.getElementById("chartCanvas"),
         chartMeta: document.getElementById("chartMeta"),
-        chartEmpty: document.getElementById("chartEmpty"),
-        chartHint: document.getElementById("chartHint"),
-        refreshHistory: document.getElementById("refreshHistory")
+        chartHint: document.getElementById("chartHint")
       };
 
       function normalizeCode(value) {
-        return value.trim().toUpperCase();
+        return String(value || "").trim().toUpperCase();
       }
 
-      function getCurrencyName(code) {
-        return localCurrencyNames[code] || state.historyNames[code] || "";
-      }
-
-      function formatRate(value) {
-        if (!Number.isFinite(value)) return "--";
-        const digits = value < 1 ? 6 : value < 10 ? 4 : 2;
-        return value.toFixed(digits);
+      function currencyName(code) {
+        return currencyCatalog[code] || state.historyNames[code] || code;
       }
 
       function formatAmount(value) {
@@ -804,99 +1295,18 @@
         }).format(value);
       }
 
-      function formatTime(date) {
-        if (!date) return "--";
-        return new Date(date).toLocaleString();
+      function formatRate(value) {
+        if (!Number.isFinite(value)) return "--";
+        const digits = value < 0.1 ? 6 : value < 10 ? 4 : 2;
+        return value.toFixed(digits);
       }
 
-      function setStatus(message, type = "ok") {
-        elements.statusText.textContent = message;
-        elements.statusText.className = type === "error" ? "error" : "ok";
+      function formatDateTime(value) {
+        if (!value) return "--";
+        return new Date(value).toLocaleString();
       }
 
-      function saveState() {
-        const payload = {
-          base: state.base,
-          amount: state.amount,
-          targets: state.targets,
-          autoRefresh: state.autoRefresh,
-          refreshMinutes: state.refreshMinutes,
-          historyTarget: state.historyTarget,
-          historyRangeDays: state.historyRangeDays
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      }
-
-      function loadState() {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) return;
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.base) state.base = normalizeCode(parsed.base);
-          if (Number.isFinite(parsed.amount)) state.amount = parsed.amount;
-          if (Array.isArray(parsed.targets) && parsed.targets.length) {
-            state.targets = Array.from(new Set(parsed.targets.map(normalizeCode)));
-          }
-          if (typeof parsed.autoRefresh === "boolean") state.autoRefresh = parsed.autoRefresh;
-          if (Number.isFinite(parsed.refreshMinutes)) {
-            state.refreshMinutes = Math.min(360, Math.max(60, parsed.refreshMinutes));
-          }
-          if (parsed.historyTarget) {
-            state.historyTarget = normalizeCode(parsed.historyTarget);
-          }
-          if (Number.isFinite(parsed.historyRangeDays)) {
-            const allowedRanges = [7, 30, 90, 180];
-            const rangeValue = Math.min(365, Math.max(7, parsed.historyRangeDays));
-            state.historyRangeDays = allowedRanges.includes(rangeValue) ? rangeValue : 30;
-          }
-        } catch (error) {
-          console.warn("Failed to parse saved state", error);
-        }
-      }
-
-      function updateNetworkState() {
-        const online = navigator.onLine;
-        elements.networkState.textContent = `网络状态：${online ? "在线" : "离线"}`;
-      }
-
-      function updateQuickBase() {
-        const buttons = elements.quickBase.querySelectorAll("button[data-base]");
-        buttons.forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.base === state.base);
-        });
-      }
-
-      function renderChips() {
-        if (!state.targets.length) {
-          elements.targetChips.innerHTML = "";
-          return;
-        }
-        elements.targetChips.innerHTML = state.targets
-          .map((code) => {
-            const name = getCurrencyName(code);
-            return `
-              <div class="chip" data-code="${code}">
-                ${code} <span>${name}</span>
-                <button type="button" aria-label="删除 ${code}" data-remove="${code}">×</button>
-              </div>
-            `;
-          })
-          .join("");
-      }
-
-      function updateCurrencyList(codes) {
-        const sorted = [...codes].sort();
-        elements.currencyList.innerHTML = sorted
-          .map((code) => {
-            const name = getCurrencyName(code);
-            const label = name ? `${code} - ${name}` : code;
-            return `<option value="${code}" label="${label}"></option>`;
-          })
-          .join("");
-        elements.supportHint.textContent = `已加载 ${sorted.length} 个币种。支持 ISO 4217 代码。`;
-      }
-
-      function formatISODateUTC(date) {
+      function formatIsoDate(date) {
         const d = new Date(date);
         const year = d.getUTCFullYear();
         const month = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -904,53 +1314,168 @@
         return `${year}-${month}-${day}`;
       }
 
-      function shiftDaysUTC(days) {
+      function daysAgo(days) {
         const d = new Date();
         d.setUTCDate(d.getUTCDate() - days);
         return d;
       }
 
-      function updateChartPeriods() {
-        const buttons = elements.chartPeriods.querySelectorAll("button[data-days]");
-        buttons.forEach((btn) => {
-          btn.classList.toggle("active", parseInt(btn.dataset.days, 10) === state.historyRangeDays);
+      function populateSelect(select, selectedCode, options) {
+        const nextSelected = options.includes(selectedCode) ? selectedCode : options[0];
+        select.innerHTML = options
+          .map((code) => `<option value="${code}">${code} · ${currencyName(code)}</option>`)
+          .join("");
+        select.value = nextSelected;
+      }
+
+      function saveState() {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            base: state.base,
+            target: state.target,
+            amount: state.amount,
+            watchlist: state.watchlist,
+            historyRange: state.historyRange
+          })
+        );
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed.base) state.base = normalizeCode(parsed.base);
+          if (parsed.target) state.target = normalizeCode(parsed.target);
+          if (Number.isFinite(parsed.amount)) state.amount = parsed.amount;
+          if (Array.isArray(parsed.watchlist)) {
+            state.watchlist = Array.from(new Set(parsed.watchlist.map(normalizeCode)));
+          }
+          if ([7, 30, 90, 180].includes(parsed.historyRange)) {
+            state.historyRange = parsed.historyRange;
+          }
+        } catch (error) {
+          console.warn("Failed to parse saved state", error);
+        }
+      }
+
+      function updateNetworkState() {
+        elements.networkState.textContent = `网络状态：${navigator.onLine ? "在线" : "离线"}`;
+      }
+
+      function setStatus(message) {
+        elements.statusMessage.textContent = message;
+      }
+
+      function updateMetrics() {
+        elements.metricFetchedAt.textContent = formatDateTime(state.lastFetchedAt);
+        elements.metricUpdatedAt.textContent = state.lastData?.time_last_update_utc || "--";
+        elements.metricNextAt.textContent = state.lastData?.time_next_update_utc || "--";
+        elements.infoBase.textContent = state.base;
+        elements.infoTarget.textContent = state.target;
+        elements.infoRefresh.textContent = `${state.autoRefreshMinutes} 分钟`;
+        elements.infoWatchCount.textContent = String(state.watchlist.length);
+      }
+
+      function renderConverter() {
+        const rates = state.lastData?.rates || {};
+        const rate = state.target === state.base ? 1 : rates[state.target];
+        const converted = Number.isFinite(rate) ? state.amount * rate : NaN;
+
+        elements.amountInput.value = state.amount;
+        elements.resultDisplay.value = Number.isFinite(converted) ? formatAmount(converted) : "--";
+        elements.pairRate.textContent = Number.isFinite(rate) ? formatRate(rate) : "--";
+        elements.pairLabel.textContent = state.target;
+        elements.inverseRate.textContent = Number.isFinite(rate)
+          ? `1 ${state.target} = ${formatRate(1 / rate)} ${state.base}`
+          : `1 ${state.target} = -- ${state.base}`;
+        elements.midMarketNote.textContent = state.lastData?.time_last_update_utc
+          ? `Mid-market rate at ${state.lastData.time_last_update_utc}`
+          : "Mid-market rate at --";
+        elements.headlinePair.textContent = `${state.base} / ${state.target}`;
+        elements.headlineNote.textContent = Number.isFinite(rate)
+          ? `1 ${state.base} = ${formatRate(rate)} ${state.target}`
+          : "等待首次汇率数据。";
+      }
+
+      function renderWatchChips() {
+        if (!state.watchlist.length) {
+          elements.watchChips.innerHTML = "";
+          elements.watchEmpty.style.display = "block";
+          return;
+        }
+
+        elements.watchEmpty.style.display = "none";
+        elements.watchChips.innerHTML = state.watchlist
+          .map(
+            (code) => `
+              <div class="chip">
+                ${code}
+                <span>${currencyName(code)}</span>
+                <button type="button" data-remove="${code}" aria-label="删除 ${code}">×</button>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      function renderRateCards() {
+        if (!state.watchlist.length || !state.lastData?.rates) {
+          elements.rateGrid.innerHTML = "";
+          return;
+        }
+
+        const rates = state.lastData.rates;
+        elements.rateGrid.innerHTML = state.watchlist
+          .filter((code) => code !== state.base && Number.isFinite(rates[code]))
+          .map((code) => {
+            const rate = rates[code];
+            const previous = state.previousRates?.[code];
+            const delta = previous ? ((rate - previous) / previous) * 100 : null;
+            const deltaClass = delta === null ? "" : delta > 0 ? "up" : delta < 0 ? "down" : "";
+            const deltaText = delta === null ? "首次加载" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}%`;
+            return `
+              <article class="rate-card">
+                <div class="rate-head">
+                  <div class="rate-code">
+                    <strong>${code}</strong>
+                    <span>${currencyName(code)}</span>
+                  </div>
+                  <div class="rate-badge ${deltaClass}">${deltaText}</div>
+                </div>
+                <div class="rate-value">${formatAmount(state.amount * rate)} ${code}</div>
+                <div class="rate-meta">
+                  1 ${state.base} = ${formatRate(rate)} ${code}<br />
+                  1 ${code} = ${formatRate(1 / rate)} ${state.base}
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function updateRangeButtons() {
+        elements.rangeToggle.querySelectorAll("[data-range]").forEach((button) => {
+          button.classList.toggle("active", Number(button.dataset.range) === state.historyRange);
         });
       }
 
-      function updateChartTargets() {
-        const candidates = state.targets.filter((code) => code !== state.base);
-        if (!candidates.length) {
-          elements.chartTarget.innerHTML = "";
-          showChartEmpty("请先添加追踪币种。");
-          return;
+      function updateHistoryTargetSelect() {
+        const options = Array.from(new Set([state.target, ...state.watchlist])).filter((code) => code !== state.base);
+        if (!options.includes(state.target)) {
+          state.target = options[0] || state.target;
         }
-        if (!candidates.includes(state.historyTarget)) {
-          state.historyTarget = candidates[0];
-          saveState();
-        }
-        elements.chartTarget.innerHTML = candidates
-          .map((code) => {
-            const name = getCurrencyName(code);
-            return `<option value="${code}">${code}${name ? ` · ${name}` : ""}</option>`;
-          })
-          .join("");
-        elements.chartTarget.value = state.historyTarget;
-      }
-
-      function showChartEmpty(message) {
-        elements.chartEmpty.textContent = message;
-        elements.chartEmpty.style.display = "block";
-        elements.chartCanvas.innerHTML = "";
-        elements.chartMetrics.innerHTML = "";
-        elements.chartMeta.textContent = "";
+        populateSelect(elements.chartTargetSelect, state.target, options.length ? options : [state.target]);
       }
 
       function renderHistory(points, meta) {
         if (!points.length) {
-          showChartEmpty("暂无历史数据可显示。");
+          elements.chartStats.innerHTML = "";
+          elements.chartCanvas.innerHTML = "暂无历史数据。";
+          elements.chartMeta.textContent = "";
           return;
         }
-        elements.chartEmpty.style.display = "none";
 
         const values = points.map((point) => point.value);
         const minValue = Math.min(...values);
@@ -958,13 +1483,11 @@
         const first = points[0].value;
         const last = points[points.length - 1].value;
         const change = ((last - first) / first) * 100;
-        const changeClass = change > 0 ? "up" : change < 0 ? "down" : "";
-        const changeLabel = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
 
-        elements.chartMetrics.innerHTML = `
+        elements.chartStats.innerHTML = `
           <div class="chart-stat">
             <span>区间涨跌</span>
-            <strong class="${changeClass}">${changeLabel}</strong>
+            <strong class="${change > 0 ? "up" : change < 0 ? "down" : ""}">${change >= 0 ? "+" : ""}${change.toFixed(2)}%</strong>
           </div>
           <div class="chart-stat">
             <span>区间最低</span>
@@ -976,16 +1499,16 @@
           </div>
         `;
 
-        const width = 640;
-        const height = 240;
-        const padding = { top: 24, right: 24, bottom: 32, left: 48 };
+        const width = 680;
+        const height = 248;
+        const padding = { top: 20, right: 16, bottom: 28, left: 46 };
         const innerWidth = width - padding.left - padding.right;
         const innerHeight = height - padding.top - padding.bottom;
         const range = maxValue - minValue || 1;
-        const pointGap = points.length > 1 ? innerWidth / (points.length - 1) : innerWidth;
+        const gap = points.length > 1 ? innerWidth / (points.length - 1) : innerWidth;
 
         const coords = points.map((point, index) => {
-          const x = padding.left + index * pointGap;
+          const x = padding.left + index * gap;
           const y = padding.top + (1 - (point.value - minValue) / range) * innerHeight;
           return { x, y };
         });
@@ -993,39 +1516,32 @@
         const linePath = coords
           .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
           .join(" ");
-
         const areaPath = `${linePath} L ${padding.left + innerWidth},${padding.top + innerHeight} L ${padding.left},${padding.top + innerHeight} Z`;
-        const gradientId = `chartGradient-${state.historyTarget}`;
-
-        const gridLines = [0, 0.5, 1]
-          .map((ratio) => {
-            const y = padding.top + ratio * innerHeight;
-            return `<line x1="${padding.left}" y1="${y}" x2="${padding.left + innerWidth}" y2="${y}" stroke="rgba(26,26,26,0.08)" stroke-dasharray="4 6" />`;
-          })
-          .join("");
-
+        const gradientId = `chartGradient-${state.base}-${state.target}`;
         const lastPoint = coords[coords.length - 1];
 
         elements.chartCanvas.innerHTML = `
-          <svg viewBox="0 0 ${width} ${height}" aria-label="历史汇率曲线">
+          <svg viewBox="0 0 ${width} ${height}" aria-label="历史汇率图">
             <defs>
               <linearGradient id="${gradientId}" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color="rgba(27,154,170,0.35)" />
-                <stop offset="100%" stop-color="rgba(27,154,170,0.02)" />
+                <stop offset="0%" stop-color="rgba(45,109,246,0.28)" />
+                <stop offset="100%" stop-color="rgba(45,109,246,0.02)" />
               </linearGradient>
             </defs>
-            ${gridLines}
-            <path d="${areaPath}" fill="url(#${gradientId})" stroke="none"></path>
-            <path d="${linePath}" fill="none" stroke="var(--accent-2)" stroke-width="2.6" stroke-linecap="round"></path>
-            <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="4.5" fill="var(--accent)" stroke="#fff" stroke-width="2"></circle>
-            <text x="${padding.left}" y="${padding.top - 6}" font-size="10" fill="var(--muted)">${formatRate(maxValue)}</text>
-            <text x="${padding.left}" y="${padding.top + innerHeight + 14}" font-size="10" fill="var(--muted)">${formatRate(minValue)}</text>
+            <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left + innerWidth}" y2="${padding.top}" stroke="rgba(17,32,63,0.08)" stroke-dasharray="4 6"></line>
+            <line x1="${padding.left}" y1="${padding.top + innerHeight / 2}" x2="${padding.left + innerWidth}" y2="${padding.top + innerHeight / 2}" stroke="rgba(17,32,63,0.08)" stroke-dasharray="4 6"></line>
+            <line x1="${padding.left}" y1="${padding.top + innerHeight}" x2="${padding.left + innerWidth}" y2="${padding.top + innerHeight}" stroke="rgba(17,32,63,0.08)" stroke-dasharray="4 6"></line>
+            <path d="${areaPath}" fill="url(#${gradientId})"></path>
+            <path d="${linePath}" fill="none" stroke="${change >= 0 ? "#2d6df6" : "#d44a53"}" stroke-width="3" stroke-linecap="round"></path>
+            <circle cx="${lastPoint.x}" cy="${lastPoint.y}" r="5" fill="${change >= 0 ? "#2d6df6" : "#d44a53"}" stroke="#fff" stroke-width="3"></circle>
+            <text x="${padding.left}" y="${padding.top - 6}" font-size="10" fill="#61708b">${formatRate(maxValue)}</text>
+            <text x="${padding.left}" y="${padding.top + innerHeight + 16}" font-size="10" fill="#61708b">${formatRate(minValue)}</text>
           </svg>
         `;
 
         elements.chartMeta.innerHTML = `
-          <span>起始 ${meta.start}</span>
-          <span>结束 ${meta.end}</span>
+          <span>${meta.start} -> ${meta.end}</span>
+          <span>${state.base}/${state.target} · ${state.historyRange} 天</span>
         `;
       }
 
@@ -1036,9 +1552,6 @@
           const payload = await response.json();
           state.historyNames = payload || {};
           state.historySupported = Object.keys(payload || {});
-          if (state.supportedCodes.length) {
-            updateCurrencyList(state.supportedCodes);
-          }
         } catch (error) {
           console.warn("Failed to load history currencies", error);
         }
@@ -1047,59 +1560,46 @@
       async function fetchHistory(force = false) {
         await loadHistoryCurrencies();
 
-        if (!state.historyTarget) {
-          showChartEmpty("请选择图表币种。");
+        if (!state.target) return;
+
+        const cacheKey = `${state.base}_${state.target}_${state.historyRange}`;
+        const cached = state.historyCache[cacheKey];
+        if (!force && cached && Date.now() - cached.fetchedAt < HISTORY_CACHE_TTL) {
+          elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB) · 使用缓存";
+          renderHistory(cached.points, cached.meta);
           return;
         }
 
-        const base = state.base;
-        const target = state.historyTarget;
-
         if (state.historySupported.length) {
-          const baseSupported = state.historySupported.includes(base);
-          const targetSupported = state.historySupported.includes(target);
-          if (!baseSupported || !targetSupported) {
-            showChartEmpty("历史数据源暂不支持该币种组合。");
-            elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB)，仅支持部分币种。";
+          if (!state.historySupported.includes(state.base) || !state.historySupported.includes(state.target)) {
+            elements.chartHint.textContent = "当前货币对不在历史数据源支持列表里。";
+            renderHistory([], {});
             return;
           }
         }
 
-        const key = `${base}_${target}_${state.historyRangeDays}`;
-        const cached = state.historyCache[key];
-        if (!force && cached && Date.now() - cached.fetchedAt < HISTORY_CACHE_TTL) {
-          renderHistory(cached.points, cached.meta);
-          elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB) · 工作日更新";
-          return;
-        }
-
         try {
-          elements.chartHint.textContent = "正在加载历史数据…";
-          const endDate = formatISODateUTC(new Date());
-          const startDate = formatISODateUTC(shiftDaysUTC(state.historyRangeDays));
-          const url = `${HISTORY_API_BASE}${startDate}..${endDate}?base=${base}&symbols=${target}`;
-          const response = await fetch(url);
+          elements.chartHint.textContent = "正在加载历史数据...";
+          const endDate = formatIsoDate(new Date());
+          const startDate = formatIsoDate(daysAgo(state.historyRange));
+          const response = await fetch(
+            `${HISTORY_API_BASE}${startDate}..${endDate}?base=${state.base}&symbols=${state.target}`
+          );
           const payload = await response.json();
-
           const points = Object.keys(payload.rates || {})
             .sort()
             .map((date) => ({
               date,
-              value: payload.rates[date]?.[target]
+              value: payload.rates[date]?.[state.target]
             }))
             .filter((point) => Number.isFinite(point.value));
-
-          if (!points.length) {
-            showChartEmpty("暂无历史数据可显示。");
-            return;
-          }
 
           const meta = {
             start: payload.start_date || startDate,
             end: payload.end_date || endDate
           };
 
-          state.historyCache[key] = {
+          state.historyCache[cacheKey] = {
             points,
             meta,
             fetchedAt: Date.now()
@@ -1109,280 +1609,184 @@
           elements.chartHint.textContent = "历史数据来自 Frankfurter (ECB) · 工作日更新";
         } catch (error) {
           console.error(error);
-          showChartEmpty("历史数据加载失败，请稍后重试。");
+          elements.chartHint.textContent = "历史数据加载失败，请稍后重试。";
+          renderHistory([], {});
         }
       }
 
-      function renderRates() {
-        if (!state.lastData || !state.targets.length) {
-          elements.rateCards.innerHTML = "";
-          elements.emptyState.style.display = "block";
-          return;
+      async function fetchRates() {
+        const base = state.base;
+        setStatus("正在拉取最新汇率...");
+
+        try {
+          const response = await fetch(`${LIVE_API_BASE}${base}`);
+          const payload = await response.json();
+
+          if (payload.result !== "success") {
+            throw new Error(payload["error-type"] || "live rates error");
+          }
+
+          state.previousRates = state.lastData?.rates || null;
+          state.lastData = payload;
+          state.lastFetchedAt = Date.now();
+          state.supportedCodes = Array.from(new Set([base, ...Object.keys(payload.rates || {})])).sort();
+          state.watchlist = state.watchlist.filter((code) => code !== base && Number.isFinite(payload.rates?.[code]));
+
+          if (state.target === state.base || !Number.isFinite(payload.rates?.[state.target])) {
+            state.target = state.watchlist[0] || state.supportedCodes.find((code) => code !== state.base) || state.target;
+          }
+
+          populateSelect(elements.baseSelect, state.base, state.supportedCodes);
+          populateSelect(elements.targetSelect, state.target, state.supportedCodes.filter((code) => code !== state.base));
+          populateSelect(elements.watchSelect, state.target, state.supportedCodes.filter((code) => code !== state.base));
+          updateHistoryTargetSelect();
+          renderConverter();
+          renderWatchChips();
+          renderRateCards();
+          updateMetrics();
+          setStatus("实时汇率已更新。");
+          saveState();
+          await fetchHistory();
+        } catch (error) {
+          console.error(error);
+          setStatus("拉取汇率失败，请稍后重试。");
         }
-        elements.emptyState.style.display = "none";
-
-        const rates = state.lastData.rates || {};
-        const amount = Number.isFinite(state.amount) ? state.amount : 0;
-
-        elements.rateCards.innerHTML = state.targets
-          .filter((code) => rates[code])
-          .map((code, index) => {
-            const rate = rates[code];
-            const converted = amount * rate;
-            const inverse = rate ? 1 / rate : 0;
-            const prevRate = state.previousRates ? state.previousRates[code] : null;
-            const delta = prevRate ? ((rate - prevRate) / prevRate) * 100 : null;
-            const deltaLabel = delta === null ? "—" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}%`;
-            const deltaClass = delta === null ? "" : delta > 0 ? "up" : delta < 0 ? "down" : "";
-            const flash = delta !== null && Math.abs(delta) >= 0.05 ? "flash" : "";
-            const name = getCurrencyName(code);
-            return `
-              <article class="rate-card ${flash}" style="--delay: ${index * 0.04}s">
-                <div class="rate-header">
-                  <div>
-                    <strong>${code}</strong>
-                    <small>${name}</small>
-                  </div>
-                  <div class="delta ${deltaClass}">${deltaLabel}</div>
-                </div>
-                <div class="rate-main">
-                  <span>${formatAmount(converted)}</span>
-                  <small>${code}</small>
-                </div>
-                <div class="rate-sub">1 ${state.base} = ${formatRate(rate)} ${code}</div>
-                <div class="rate-sub">1 ${code} = ${formatRate(inverse)} ${state.base}</div>
-              </article>
-            `;
-          })
-          .join("");
-      }
-
-      function updateMeta(data, fetchedAt) {
-        elements.fetchedAt.textContent = fetchedAt ? formatTime(fetchedAt) : "--";
-        elements.dataUpdatedAt.textContent = data?.time_last_update_utc || "--";
-        elements.dataNextAt.textContent = data?.time_next_update_utc || "--";
       }
 
       function scheduleRefresh() {
         if (state.timer) {
           clearInterval(state.timer);
         }
-        if (!state.autoRefresh) return;
-        state.timer = setInterval(() => {
-          fetchRates();
-        }, state.refreshMinutes * 60 * 1000);
+        state.timer = setInterval(fetchRates, state.autoRefreshMinutes * 60 * 1000);
       }
 
-      function cacheKey(base) {
-        return `fx_cache_${base}`;
+      function syncSelects() {
+        if (state.target === state.base) {
+          state.target = Object.keys(currencyCatalog).find((code) => code !== state.base) || state.target;
+        }
+        if (state.supportedCodes.length) {
+          populateSelect(elements.baseSelect, state.base, state.supportedCodes);
+          populateSelect(elements.targetSelect, state.target, state.supportedCodes.filter((code) => code !== state.base));
+          populateSelect(elements.watchSelect, state.target, state.supportedCodes.filter((code) => code !== state.base));
+        } else {
+          const defaults = Object.keys(currencyCatalog);
+          populateSelect(elements.baseSelect, state.base, defaults);
+          populateSelect(elements.targetSelect, state.target, defaults.filter((code) => code !== state.base));
+          populateSelect(elements.watchSelect, state.target, defaults.filter((code) => code !== state.base));
+        }
+        updateHistoryTargetSelect();
+        updateRangeButtons();
+        updateMetrics();
+        renderWatchChips();
       }
-
-      function saveCache(base, data) {
-        const payload = { data, fetchedAt: Date.now() };
-        localStorage.setItem(cacheKey(base), JSON.stringify(payload));
-      }
-
-      function loadCache(base) {
-        const cached = localStorage.getItem(cacheKey(base));
-        if (!cached) return null;
-        try {
-          return JSON.parse(cached);
-        } catch (error) {
-          console.warn("Failed to parse cache", error);
-          return null;
-        }
-      }
-
-      async function fetchRates(forceHistory = false) {
-        const base = normalizeCode(state.base || "USD");
-        state.base = base;
-        elements.baseInput.value = base;
-        setStatus("正在拉取最新汇率…");
-        updateQuickBase();
-
-        try {
-          const response = await fetch(`${API_BASE}${base}`);
-          const payload = await response.json();
-
-          if (payload.result !== "success") {
-            throw new Error(payload["error-type"] || "API error");
-          }
-
-          state.previousRates = state.lastData ? state.lastData.rates : null;
-          state.lastData = payload;
-          state.lastFetchedAt = Date.now();
-          state.supportedCodes = Object.keys(payload.rates || {}).concat(base);
-          state.targets = state.targets.filter((code) => code !== base && payload.rates?.[code]);
-
-          saveCache(base, payload);
-          updateCurrencyList(state.supportedCodes);
-          updateMeta(payload, state.lastFetchedAt);
-          renderChips();
-          renderRates();
-          updateChartTargets();
-          fetchHistory(forceHistory);
-
-          setStatus("已更新汇率，数据正常。", "ok");
-        } catch (error) {
-          const cached = loadCache(base);
-          if (cached?.data) {
-            state.previousRates = state.lastData ? state.lastData.rates : null;
-            state.lastData = cached.data;
-            state.lastFetchedAt = cached.fetchedAt;
-            state.supportedCodes = Object.keys(cached.data.rates || {}).concat(base);
-            state.targets = state.targets.filter((code) => code !== base && cached.data.rates?.[code]);
-            updateCurrencyList(state.supportedCodes);
-            updateMeta(cached.data, cached.fetchedAt);
-            renderChips();
-            renderRates();
-            updateChartTargets();
-            fetchHistory(forceHistory);
-            setStatus("网络异常，已使用缓存数据。", "error");
-          } else {
-            setStatus("获取失败，请稍后重试。", "error");
-          }
-          console.error(error);
-        }
-      }
-
-      function applyInputs() {
-        elements.baseInput.value = state.base;
-        elements.amountInput.value = state.amount;
-        elements.autoRefreshToggle.checked = state.autoRefresh;
-        elements.refreshRange.value = state.refreshMinutes;
-        elements.refreshValue.textContent = `${state.refreshMinutes} 分钟/次`;
-        updateQuickBase();
-        updateChartPeriods();
-      }
-
-      function maybeRefreshOnFocus() {
-        if (!state.autoRefresh || !state.lastFetchedAt) return;
-        const elapsed = Date.now() - state.lastFetchedAt;
-        if (elapsed > state.refreshMinutes * 60 * 1000) {
-          fetchRates();
-        }
-      }
-
-      function handleAddCode() {
-        const code = normalizeCode(elements.addCodeInput.value);
-        if (!code) return;
-        if (code.length !== 3) {
-          setStatus("请输入 3 位币种代码。", "error");
-          return;
-        }
-        if (state.supportedCodes.length && !state.supportedCodes.includes(code)) {
-          setStatus("该币种暂不支持或尚未加载。", "error");
-          return;
-        }
-        if (!state.targets.includes(code)) {
-          state.targets.push(code);
-          saveState();
-          renderChips();
-          renderRates();
-          updateChartTargets();
-          fetchHistory(true);
-        }
-        elements.addCodeInput.value = "";
-      }
-
-      elements.addCodeBtn.addEventListener("click", handleAddCode);
-      elements.addCodeInput.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          handleAddCode();
-        }
-      });
-
-      elements.targetChips.addEventListener("click", (event) => {
-        const removeBtn = event.target.closest("button[data-remove]");
-        if (!removeBtn) return;
-        const code = removeBtn.dataset.remove;
-        state.targets = state.targets.filter((item) => item !== code);
-        saveState();
-        renderChips();
-        renderRates();
-        updateChartTargets();
-        fetchHistory(true);
-      });
-
-      elements.baseInput.addEventListener("change", () => {
-        const code = normalizeCode(elements.baseInput.value);
-        if (code.length !== 3) {
-          setStatus("请输入 3 位币种代码。", "error");
-          return;
-        }
-        state.base = code;
-        state.targets = state.targets.filter((item) => item !== code);
-        saveState();
-        fetchRates();
-      });
 
       elements.amountInput.addEventListener("input", () => {
         const value = parseFloat(elements.amountInput.value);
         state.amount = Number.isFinite(value) ? value : 0;
         saveState();
-        renderRates();
+        renderConverter();
+        renderRateCards();
       });
 
-      elements.refreshRange.addEventListener("input", () => {
-        state.refreshMinutes = parseInt(elements.refreshRange.value, 10);
-        elements.refreshValue.textContent = `${state.refreshMinutes} 分钟/次`;
-        saveState();
-        scheduleRefresh();
-      });
-
-      elements.autoRefreshToggle.addEventListener("change", () => {
-        state.autoRefresh = elements.autoRefreshToggle.checked;
-        saveState();
-        scheduleRefresh();
-      });
-
-      elements.refreshNow.addEventListener("click", () => {
-        fetchRates(true);
-      });
-
-      elements.refreshHistory.addEventListener("click", () => {
-        fetchHistory(true);
-      });
-
-      elements.chartTarget.addEventListener("change", () => {
-        const code = normalizeCode(elements.chartTarget.value);
-        state.historyTarget = code;
-        saveState();
-        fetchHistory(true);
-      });
-
-      elements.chartPeriods.addEventListener("click", (event) => {
-        const btn = event.target.closest("button[data-days]");
-        if (!btn) return;
-        const days = parseInt(btn.dataset.days, 10);
-        state.historyRangeDays = days;
-        updateChartPeriods();
-        saveState();
-        fetchHistory(true);
-      });
-
-      elements.quickBase.addEventListener("click", (event) => {
-        const btn = event.target.closest("button[data-base]");
-        if (!btn) return;
-        state.base = btn.dataset.base;
-        state.targets = state.targets.filter((item) => item !== state.base);
+      elements.baseSelect.addEventListener("change", () => {
+        state.base = normalizeCode(elements.baseSelect.value);
+        state.watchlist = state.watchlist.filter((code) => code !== state.base);
         saveState();
         fetchRates();
       });
 
-      window.addEventListener("online", updateNetworkState);
-      window.addEventListener("offline", updateNetworkState);
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          maybeRefreshOnFocus();
+      elements.targetSelect.addEventListener("change", () => {
+        state.target = normalizeCode(elements.targetSelect.value);
+        saveState();
+        renderConverter();
+        updateHistoryTargetSelect();
+        fetchHistory(true);
+      });
+
+      elements.chartTargetSelect.addEventListener("change", () => {
+        state.target = normalizeCode(elements.chartTargetSelect.value);
+        elements.targetSelect.value = state.target;
+        saveState();
+        renderConverter();
+        fetchHistory(true);
+      });
+
+      elements.swapButton.addEventListener("click", () => {
+        const nextBase = state.target;
+        const nextTarget = state.base;
+        state.base = nextBase;
+        state.target = nextTarget;
+        state.watchlist = state.watchlist.filter((code) => code !== state.base);
+        saveState();
+        fetchRates();
+      });
+
+      elements.refreshButton.addEventListener("click", () => {
+        fetchRates();
+      });
+
+      elements.historyRefreshButton.addEventListener("click", () => {
+        fetchHistory(true);
+      });
+
+      elements.addTargetButton.addEventListener("click", () => {
+        if (!state.watchlist.includes(state.target) && state.target !== state.base) {
+          state.watchlist.push(state.target);
+          state.watchlist = Array.from(new Set(state.watchlist));
+          saveState();
+          renderWatchChips();
+          renderRateCards();
+          updateMetrics();
         }
       });
 
+      elements.watchAddButton.addEventListener("click", () => {
+        const code = normalizeCode(elements.watchSelect.value);
+        if (!code || code === state.base) return;
+        if (!state.watchlist.includes(code)) {
+          state.watchlist.push(code);
+          saveState();
+          renderWatchChips();
+          renderRateCards();
+          updateMetrics();
+        }
+      });
+
+      elements.watchChips.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove]");
+        if (!button) return;
+        const code = button.dataset.remove;
+        state.watchlist = state.watchlist.filter((item) => item !== code);
+        if (state.target === code && state.watchlist.length) {
+          state.target = state.watchlist[0];
+          elements.targetSelect.value = state.target;
+        }
+        saveState();
+        renderWatchChips();
+        renderRateCards();
+        updateHistoryTargetSelect();
+        updateMetrics();
+        renderConverter();
+        fetchHistory(true);
+      });
+
+      elements.rangeToggle.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-range]");
+        if (!button) return;
+        state.historyRange = Number(button.dataset.range);
+        updateRangeButtons();
+        saveState();
+        fetchHistory(true);
+      });
+
+      window.addEventListener("online", updateNetworkState);
+      window.addEventListener("offline", updateNetworkState);
+
       function init() {
         loadState();
-        applyInputs();
+        syncSelects();
         updateNetworkState();
+        renderConverter();
         scheduleRefresh();
         fetchRates();
       }
